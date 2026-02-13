@@ -1,0 +1,581 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
+  }
+  public: {
+    Tables: {
+      goal_events: {
+        Row: {
+          assist_player_id: string | null
+          created_at: string
+          id: string
+          match_id: string
+          period: Database["public"]["Enums"]["goal_period"]
+          scorer_player_id: string
+          team_id: string
+          time_mmss: string
+        }
+        Insert: {
+          assist_player_id?: string | null
+          created_at?: string
+          id?: string
+          match_id: string
+          period: Database["public"]["Enums"]["goal_period"]
+          scorer_player_id: string
+          team_id: string
+          time_mmss: string
+        }
+        Update: {
+          assist_player_id?: string | null
+          created_at?: string
+          id?: string
+          match_id?: string
+          period?: Database["public"]["Enums"]["goal_period"]
+          scorer_player_id?: string
+          team_id?: string
+          time_mmss?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_events_assist_player_id_fkey"
+            columns: ["assist_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_events_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_events_scorer_player_id_fkey"
+            columns: ["scorer_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_events_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matches: {
+        Row: {
+          away_team_id: string
+          created_at: string
+          home_team_id: string
+          id: string
+          match_number: number | null
+          notes: string | null
+          ot_played: boolean | null
+          ot_winner_team_id: string | null
+          reg_away_score: number | null
+          reg_home_score: number | null
+          so_played: boolean | null
+          so_winner_team_id: string | null
+          stage: Database["public"]["Enums"]["match_stage"]
+          start_time: string | null
+          status: Database["public"]["Enums"]["match_status"]
+          tournament_id: string
+          updated_at: string
+          venue: string | null
+          winner_team_id: string | null
+        }
+        Insert: {
+          away_team_id: string
+          created_at?: string
+          home_team_id: string
+          id?: string
+          match_number?: number | null
+          notes?: string | null
+          ot_played?: boolean | null
+          ot_winner_team_id?: string | null
+          reg_away_score?: number | null
+          reg_home_score?: number | null
+          so_played?: boolean | null
+          so_winner_team_id?: string | null
+          stage?: Database["public"]["Enums"]["match_stage"]
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["match_status"]
+          tournament_id: string
+          updated_at?: string
+          venue?: string | null
+          winner_team_id?: string | null
+        }
+        Update: {
+          away_team_id?: string
+          created_at?: string
+          home_team_id?: string
+          id?: string
+          match_number?: number | null
+          notes?: string | null
+          ot_played?: boolean | null
+          ot_winner_team_id?: string | null
+          reg_away_score?: number | null
+          reg_home_score?: number | null
+          so_played?: boolean | null
+          so_winner_team_id?: string | null
+          stage?: Database["public"]["Enums"]["match_stage"]
+          start_time?: string | null
+          status?: Database["public"]["Enums"]["match_status"]
+          tournament_id?: string
+          updated_at?: string
+          venue?: string | null
+          winner_team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_ot_winner_team_id_fkey"
+            columns: ["ot_winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_so_winner_team_id_fkey"
+            columns: ["so_winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_winner_team_id_fkey"
+            columns: ["winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_stats_aggregate: {
+        Row: {
+          assists: number
+          goals: number
+          id: string
+          player_id: string
+          points: number
+          team_id: string
+          tournament_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          assists?: number
+          goals?: number
+          id?: string
+          player_id: string
+          points?: number
+          team_id: string
+          tournament_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          assists?: number
+          goals?: number
+          id?: string
+          player_id?: string
+          points?: number
+          team_id?: string
+          tournament_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_stats_aggregate_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_stats_aggregate_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_stats_aggregate_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          created_at: string
+          id: string
+          jersey_number: number
+          name: string
+          position: string | null
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          jersey_number: number
+          name: string
+          position?: string | null
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          jersey_number?: number
+          name?: string
+          position?: string | null
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      standings_aggregate: {
+        Row: {
+          draws: number
+          gc: number
+          gd: number
+          gf: number
+          id: string
+          losses: number
+          played: number
+          points: number
+          rank: number | null
+          rank_calculated_at: string | null
+          team_id: string
+          tournament_id: string
+          wins: number
+        }
+        Insert: {
+          draws?: number
+          gc?: number
+          gd?: number
+          gf?: number
+          id?: string
+          losses?: number
+          played?: number
+          points?: number
+          rank?: number | null
+          rank_calculated_at?: string | null
+          team_id: string
+          tournament_id: string
+          wins?: number
+        }
+        Update: {
+          draws?: number
+          gc?: number
+          gd?: number
+          gf?: number
+          id?: string
+          losses?: number
+          played?: number
+          points?: number
+          rank?: number | null
+          rank_calculated_at?: string | null
+          team_id?: string
+          tournament_id?: string
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "standings_aggregate_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "standings_aggregate_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          slug: string
+          tournament_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          slug: string
+          tournament_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          slug?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          rules_json: Json | null
+          season: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          rules_json?: Json | null
+          season: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          rules_json?: Json | null
+          season?: string
+        }
+        Relationships: []
+      }
+      webhook_config: {
+        Row: {
+          created_at: string
+          enabled: boolean | null
+          id: string
+          tournament_id: string
+          updated_at: string
+          webhook_url: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean | null
+          id?: string
+          tournament_id: string
+          updated_at?: string
+          webhook_url: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean | null
+          id?: string
+          tournament_id?: string
+          updated_at?: string
+          webhook_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_config_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      goal_period: "1" | "2" | "3" | "OT"
+      match_stage: "REGULAR" | "P1A" | "P1B" | "SEMI" | "P2" | "FINAL" | "THIRD"
+      match_status: "scheduled" | "live" | "final" | "locked"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      goal_period: ["1", "2", "3", "OT"],
+      match_stage: ["REGULAR", "P1A", "P1B", "SEMI", "P2", "FINAL", "THIRD"],
+      match_status: ["scheduled", "live", "final", "locked"],
+    },
+  },
+} as const
