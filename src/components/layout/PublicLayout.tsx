@@ -17,7 +17,7 @@ export default function PublicLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border text-secondary-foreground bg-[#a57dd4]">
+      <header className="sticky top-0 z-50 border-b border-border text-secondary-foreground bg-[#2564b6]">
         <div className="container flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-2xl">🏒</span>
