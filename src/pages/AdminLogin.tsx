@@ -28,7 +28,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-secondary p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 text-destructive bg-[#f038db]">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <span className="text-4xl mb-2 block">🏒</span>
@@ -43,8 +43,8 @@ export default function AdminLogin() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+                required />
+
             </div>
             <div>
               <Label htmlFor="password">Contraseña</Label>
@@ -53,8 +53,8 @@ export default function AdminLogin() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+                required />
+
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Ingresando..." : "Ingresar"}
@@ -62,6 +62,6 @@ export default function AdminLogin() {
           </form>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>);
+
 }
