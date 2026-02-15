@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { toBogotaDate } from "@/lib/dateUtils";
 
 const teamColorMap: Record<string, string> = {
   vikings: "bg-team-vikings",
@@ -34,7 +35,7 @@ export default function MatchDetail() {
     queryFn: async () => {
       const { data } = await supabase
         .from("goal_events")
-        .select("*, scorer:players!goal_events_scorer_player_id_fkey(*), assist:players!goal_events_assist_player_id_fkey(*), team:teams(*)")
+        .select("*, scorer:players!goal_events_scorer_player_id_fkey(*), assist:players!goal_events_assist_player_id_fkey(*), team:teams(*), own_goal_player:players!goal_events_own_goal_by_player_id_fkey(*)")
         .eq("match_id", id!)
         .order("period", { ascending: true })
         .order("time_mmss", { ascending: true });
@@ -59,7 +60,7 @@ export default function MatchDetail() {
             </Badge>
             {match.start_time && (
               <p className="text-sm text-muted-foreground mt-1">
-                {format(new Date(match.start_time), "EEEE d MMMM yyyy • HH:mm", { locale: es })}
+                {format(toBogotaDate(match.start_time), "EEEE d MMMM yyyy • HH:mm", { locale: es })}
               </p>
             )}
           </div>
@@ -121,7 +122,11 @@ export default function MatchDetail() {
                       >
                         <span className="text-xs text-muted-foreground font-mono w-12">{goal.time_mmss}</span>
                         <div className={`w-2 h-2 rounded-full ${teamColorMap[goal.team?.slug] || "bg-muted"}`} />
-                        <span className="font-medium text-sm">⚽ {goal.scorer?.name}</span>
+                        {goal.is_own_goal ? (
+                          <span className="font-medium text-sm">⚽ Autogol{goal.own_goal_player?.name ? ` (${goal.own_goal_player.name})` : ''}</span>
+                        ) : (
+                          <span className="font-medium text-sm">⚽ {goal.scorer?.name}</span>
+                        )}
                         {goal.assist && (
                           <span className="text-xs text-muted-foreground">
                             (asist. {goal.assist.name})

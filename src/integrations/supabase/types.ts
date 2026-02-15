@@ -19,9 +19,11 @@ export type Database = {
           assist_player_id: string | null
           created_at: string
           id: string
+          is_own_goal: boolean
           match_id: string
+          own_goal_by_player_id: string | null
           period: Database["public"]["Enums"]["goal_period"]
-          scorer_player_id: string
+          scorer_player_id: string | null
           team_id: string
           time_mmss: string
         }
@@ -29,9 +31,11 @@ export type Database = {
           assist_player_id?: string | null
           created_at?: string
           id?: string
+          is_own_goal?: boolean
           match_id: string
+          own_goal_by_player_id?: string | null
           period: Database["public"]["Enums"]["goal_period"]
-          scorer_player_id: string
+          scorer_player_id?: string | null
           team_id: string
           time_mmss: string
         }
@@ -39,9 +43,11 @@ export type Database = {
           assist_player_id?: string | null
           created_at?: string
           id?: string
+          is_own_goal?: boolean
           match_id?: string
+          own_goal_by_player_id?: string | null
           period?: Database["public"]["Enums"]["goal_period"]
-          scorer_player_id?: string
+          scorer_player_id?: string | null
           team_id?: string
           time_mmss?: string
         }
@@ -58,6 +64,13 @@ export type Database = {
             columns: ["match_id"]
             isOneToOne: false
             referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_events_own_goal_by_player_id_fkey"
+            columns: ["own_goal_by_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
             referencedColumns: ["id"]
           },
           {
@@ -467,6 +480,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      recalculate_player_stats: {
+        Args: { p_tournament_id: string }
+        Returns: undefined
+      }
+      recalculate_standings: {
+        Args: { p_tournament_id: string }
+        Returns: undefined
       }
     }
     Enums: {
