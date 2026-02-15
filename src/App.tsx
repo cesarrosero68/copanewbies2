@@ -7,6 +7,7 @@ import PublicLayout from "./components/layout/PublicLayout";
 import Home from "./pages/Home";
 import Schedule from "./pages/Schedule";
 import Standings from "./pages/Standings";
+import Players from "./pages/Players";
 import Playoffs from "./pages/Playoffs";
 import MatchDetail from "./pages/MatchDetail";
 import TeamDetail from "./pages/TeamDetail";
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/" element={<Home />} />
             <Route path="/schedule" element={<Schedule />} />
             <Route path="/standings" element={<Standings />} />
+            <Route path="/players" element={<Players />} />
             <Route path="/playoffs" element={<Playoffs />} />
             <Route path="/match/:id" element={<MatchDetail />} />
             <Route path="/team/:slug" element={<TeamDetail />} />
