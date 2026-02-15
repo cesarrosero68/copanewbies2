@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { toBogotaDate } from "@/lib/dateUtils";
 
 const TOURNAMENT_ID = "a0000000-0000-0000-0000-000000000001";
 
@@ -70,6 +71,19 @@ export default function Home() {
     }
   });
 
+  const { data: topAssists } = useQuery({
+    queryKey: ["top-assists"],
+    queryFn: async () => {
+      const { data } = await supabase.
+      from("player_stats_aggregate").
+      select("*, player:players(*), team:teams(*)").
+      eq("tournament_id", TOURNAMENT_ID).
+      order("assists", { ascending: false }).
+      limit(5);
+      return data || [];
+    }
+  });
+
   const { data: topPoints } = useQuery({
     queryKey: ["top-points"],
     queryFn: async () => {
@@ -118,7 +132,7 @@ export default function Home() {
                   </div>
                   {match.start_time &&
                 <p className="text-xs text-muted-foreground text-center mt-2">
-                      {format(new Date(match.start_time), "d MMM yyyy", { locale: es })}
+                      {format(toBogotaDate(match.start_time), "d MMM yyyy", { locale: es })}
                     </p>
                 }
                   {match.ot_played &&
@@ -153,7 +167,7 @@ export default function Home() {
                 </div>
                 {match.start_time &&
               <p className="text-xs text-muted-foreground text-center mt-2">
-                    {format(new Date(match.start_time), "EEEE d MMM • HH:mm", { locale: es })}
+                    {format(toBogotaDate(match.start_time), "EEEE d MMM • HH:mm", { locale: es })}
                   </p>
               }
                 <Badge className="mx-auto mt-1 block w-fit text-xs" variant="secondary">
@@ -229,6 +243,27 @@ export default function Home() {
           </div>
 
           <div>
+            <h2 className="font-display text-2xl font-bold uppercase mb-4">Asistentes</h2>
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                {topAssists?.map((ps: any, i: number) =>
+                <div key={ps.player_id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground text-sm w-5">{i + 1}.</span>
+                      <div className={`w-2 h-2 rounded-full ${teamColorMap[ps.team?.slug] || "bg-muted"}`} />
+                      <span className="text-sm font-medium">{ps.player?.name}</span>
+                    </div>
+                    <span className="font-display font-bold">{ps.assists}</span>
+                  </div>
+                )}
+                {(!topAssists || topAssists.length === 0) &&
+                <p className="text-muted-foreground text-sm">Sin datos aún</p>
+                }
+              </CardContent>
+            </Card>
+          </div>
+
+          <div>
             <h2 className="font-display text-2xl font-bold uppercase mb-4">Mejor Jugador (Puntos)</h2>
             <Card>
               <CardContent className="p-4 space-y-2">
@@ -246,6 +281,34 @@ export default function Home() {
                   </div>
                 )}
                 {(!topPoints || topPoints.length === 0) &&
+                <p className="text-muted-foreground text-sm">Sin datos aún</p>
+                }
+              </CardContent>
+            </Card>
+          </div>
+
+          <div>
+            <h2 className="font-display text-2xl font-bold uppercase mb-4">Mejor Arquero (GAA)</h2>
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                {standings?.filter((s: any) => s.played > 0).sort((a: any, b: any) => {
+                  const gaaA = a.played > 0 ? a.gc / a.played : 999;
+                  const gaaB = b.played > 0 ? b.gc / b.played : 999;
+                  return gaaA - gaaB;
+                }).map((s: any, i: number) =>
+                <div key={s.team_id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground text-sm w-5">{i + 1}.</span>
+                      <div className={`w-2 h-2 rounded-full ${teamColorMap[s.team?.slug] || "bg-muted"}`} />
+                      <span className="text-sm font-medium">{s.team?.name}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-display font-bold">{(s.gc / s.played).toFixed(2)}</span>
+                      <span className="text-muted-foreground text-xs ml-1">({s.gc}GC / {s.played}PJ)</span>
+                    </div>
+                  </div>
+                )}
+                {(!standings || standings.filter((s: any) => s.played > 0).length === 0) &&
                 <p className="text-muted-foreground text-sm">Sin datos aún</p>
                 }
               </CardContent>

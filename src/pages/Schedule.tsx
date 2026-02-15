@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { toBogotaDate } from "@/lib/dateUtils";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -139,7 +140,7 @@ export default function Schedule() {
 
                     <div className="text-xs text-muted-foreground shrink-0 w-28 text-right">
                       {match.start_time
-                        ? format(new Date(match.start_time), "d MMM HH:mm", { locale: es })
+                        ? format(toBogotaDate(match.start_time), "d MMM HH:mm", { locale: es })
                         : "TBD"}
                     </div>
                   </div>

@@ -155,8 +155,48 @@ function MatchRow({ match, queryClient }: { match: any; queryClient: any }) {
     updateMatch.mutate(updates);
   };
 
-  const closeMatch = () => {
-    updateMatch.mutate({ status: "final" });
+  const closeMatch = async () => {
+    // Validate goal events match scores
+    const { data: goals } = await supabase
+      .from("goal_events")
+      .select("team_id")
+      .eq("match_id", match.id);
+
+    const homeGoals = (goals || []).filter((g: any) => g.team_id === match.home_team_id).length;
+    const awayGoals = (goals || []).filter((g: any) => g.team_id === match.away_team_id).length;
+    const expectedHome = parseInt(homeScore) || match.reg_home_score || 0;
+    const expectedAway = parseInt(awayScore) || match.reg_away_score || 0;
+
+    if (homeGoals !== expectedHome || awayGoals !== expectedAway) {
+      toast({
+        title: "Error de validación",
+        description: `Los eventos de gol (${homeGoals}-${awayGoals}) no coinciden con el marcador (${expectedHome}-${expectedAway}). Registra todos los goles antes de cerrar.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Determine winner for regular season
+    const updates: any = { status: "final" };
+    if (!isPlayoff) {
+      if (expectedHome > expectedAway) updates.winner_team_id = match.home_team_id;
+      else if (expectedAway > expectedHome) updates.winner_team_id = match.away_team_id;
+      else updates.winner_team_id = null; // draw
+    }
+
+    const { error } = await supabase.from("matches").update(updates).eq("id", match.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    // Recalculate aggregates
+    await supabase.rpc("recalculate_standings", { p_tournament_id: TOURNAMENT_ID });
+    await supabase.rpc("recalculate_player_stats", { p_tournament_id: TOURNAMENT_ID });
+
+    queryClient.invalidateQueries({ queryKey: ["admin-matches"] });
+    toast({ title: "Partido cerrado y agregados recalculados" });
+    setEditing(false);
   };
 
   const lockMatch = () => {
@@ -200,16 +240,14 @@ function MatchRow({ match, queryClient }: { match: any; queryClient: any }) {
                 Bloquear
               </Button>
             )}
-            {(match.status === "final" || match.status === "locked") && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="ghost">Goles</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <GoalEventsManager matchId={match.id} homeTeamId={match.home_team_id} awayTeamId={match.away_team_id} />
-                </DialogContent>
-              </Dialog>
-            )}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="ghost">Goles</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                <GoalEventsManager matchId={match.id} homeTeamId={match.home_team_id} awayTeamId={match.away_team_id} />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -274,13 +312,15 @@ function GoalEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: strin
   const [time, setTime] = useState("");
   const [scorerId, setScorerId] = useState("");
   const [assistId, setAssistId] = useState("");
+  const [isOwnGoal, setIsOwnGoal] = useState(false);
+  const [ownGoalPlayerId, setOwnGoalPlayerId] = useState("");
 
   const { data: goals } = useQuery({
     queryKey: ["admin-goals", matchId],
     queryFn: async () => {
       const { data } = await supabase
         .from("goal_events")
-        .select("*, scorer:players!goal_events_scorer_player_id_fkey(*), assist:players!goal_events_assist_player_id_fkey(*), team:teams(*)")
+        .select("*, scorer:players!goal_events_scorer_player_id_fkey(*), assist:players!goal_events_assist_player_id_fkey(*), team:teams(*), own_goal_player:players!goal_events_own_goal_by_player_id_fkey(*)")
         .eq("match_id", matchId)
         .order("period")
         .order("time_mmss");
@@ -304,7 +344,10 @@ function GoalEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: strin
     },
   });
 
-  const players = teamId === homeTeamId ? homePlayers : awayPlayers;
+  // team_id = equipo que se BENEFICIA del gol (recibe GF)
+  // For own goal: team_id = opponent of the player who scored own goal
+  const scoringTeamPlayers = teamId === homeTeamId ? homePlayers : awayPlayers;
+  const defendingTeamPlayers = teamId === homeTeamId ? awayPlayers : homePlayers;
 
   const { data: teams } = useQuery({
     queryKey: ["match-teams", homeTeamId, awayTeamId],
@@ -316,14 +359,23 @@ function GoalEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: strin
 
   const addGoal = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("goal_events").insert({
+      const insert: any = {
         match_id: matchId,
         team_id: teamId,
         period: period as any,
         time_mmss: time,
-        scorer_player_id: scorerId,
-        assist_player_id: assistId || null,
-      });
+        is_own_goal: isOwnGoal,
+      };
+      if (isOwnGoal) {
+        insert.scorer_player_id = null;
+        insert.assist_player_id = null;
+        insert.own_goal_by_player_id = ownGoalPlayerId || null;
+      } else {
+        insert.scorer_player_id = scorerId;
+        insert.assist_player_id = assistId || null;
+        insert.own_goal_by_player_id = null;
+      }
+      const { error } = await supabase.from("goal_events").insert(insert);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -331,6 +383,8 @@ function GoalEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: strin
       setTime("");
       setScorerId("");
       setAssistId("");
+      setIsOwnGoal(false);
+      setOwnGoalPlayerId("");
       toast({ title: "Gol registrado" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
@@ -347,6 +401,8 @@ function GoalEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: strin
     },
   });
 
+  const canAdd = isOwnGoal ? !!time : (!!scorerId && !!time);
+
   return (
     <div>
       <DialogHeader>
@@ -358,7 +414,11 @@ function GoalEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: strin
           <div key={g.id} className="flex items-center justify-between p-2 bg-muted rounded text-sm">
             <div>
               <span className="font-mono text-xs mr-2">P{g.period} {g.time_mmss}</span>
-              <span className="font-medium">{g.scorer?.name}</span>
+              {g.is_own_goal ? (
+                <span className="font-medium text-destructive">Autogol{g.own_goal_player ? ` (${g.own_goal_player.name})` : ''}</span>
+              ) : (
+                <span className="font-medium">{g.scorer?.name}</span>
+              )}
               {g.assist && <span className="text-muted-foreground"> (A: {g.assist.name})</span>}
               <span className="text-xs text-muted-foreground ml-2">- {g.team?.name}</span>
             </div>
@@ -374,8 +434,8 @@ function GoalEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: strin
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label className="text-xs">Equipo</Label>
-            <Select value={teamId} onValueChange={setTeamId}>
+            <Label className="text-xs">Equipo que anota</Label>
+            <Select value={teamId} onValueChange={(v) => { setTeamId(v); setScorerId(""); setAssistId(""); setOwnGoalPlayerId(""); }}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {teams?.map((t: any) => (
@@ -403,32 +463,54 @@ function GoalEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: strin
           <Input value={time} onChange={(e) => setTime(e.target.value)} placeholder="05:30" />
         </div>
 
-        <div>
-          <Label className="text-xs">Goleador</Label>
-          <Select value={scorerId} onValueChange={setScorerId}>
-            <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-            <SelectContent>
-              {players?.map((p: any) => (
-                <SelectItem key={p.id} value={p.id}>#{p.jersey_number} {p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" checked={isOwnGoal} onChange={(e) => { setIsOwnGoal(e.target.checked); setScorerId(""); setAssistId(""); setOwnGoalPlayerId(""); }} />
+          Gol en contra (autogol)
+        </label>
 
-        <div>
-          <Label className="text-xs">Asistente (opcional)</Label>
-          <Select value={assistId} onValueChange={setAssistId}>
-            <SelectTrigger><SelectValue placeholder="Ninguno" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Ninguno</SelectItem>
-              {players?.map((p: any) => (
-                <SelectItem key={p.id} value={p.id}>#{p.jersey_number} {p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {!isOwnGoal ? (
+          <>
+            <div>
+              <Label className="text-xs">Goleador</Label>
+              <Select value={scorerId} onValueChange={setScorerId}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                <SelectContent>
+                  {scoringTeamPlayers?.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>#{p.jersey_number} {p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <Button onClick={() => addGoal.mutate()} disabled={!scorerId || !time} className="w-full">
+            <div>
+              <Label className="text-xs">Asistente (opcional)</Label>
+              <Select value={assistId} onValueChange={setAssistId}>
+                <SelectTrigger><SelectValue placeholder="Ninguno" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Ninguno</SelectItem>
+                  {scoringTeamPlayers?.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>#{p.jersey_number} {p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        ) : (
+          <div>
+            <Label className="text-xs">Autogol por (jugador del equipo que defiende)</Label>
+            <Select value={ownGoalPlayerId} onValueChange={setOwnGoalPlayerId}>
+              <SelectTrigger><SelectValue placeholder="Seleccionar (opcional)" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Desconocido</SelectItem>
+                {defendingTeamPlayers?.map((p: any) => (
+                  <SelectItem key={p.id} value={p.id}>#{p.jersey_number} {p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        <Button onClick={() => addGoal.mutate()} disabled={!canAdd} className="w-full">
           Agregar Gol
         </Button>
       </div>
