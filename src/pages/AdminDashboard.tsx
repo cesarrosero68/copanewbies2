@@ -36,6 +36,20 @@ export default function AdminDashboard() {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  const { data: isAdmin, isLoading: checkingAdmin } = useQuery({
+    queryKey: ["is-admin", session?.user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session!.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!session,
+  });
+
   const { data: matches } = useQuery({
     queryKey: ["admin-matches"],
     queryFn: async () => {
@@ -46,7 +60,7 @@ export default function AdminDashboard() {
         .order("match_number");
       return data || [];
     },
-    enabled: !!session,
+    enabled: !!session && isAdmin === true,
   });
 
   const handleLogout = async () => {
@@ -54,8 +68,17 @@ export default function AdminDashboard() {
     navigate("/admin/login");
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
+  if (loading || checkingAdmin) return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
   if (!session) return null;
+  if (isAdmin === false) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <h1 className="text-2xl font-bold">Acceso denegado</h1>
+        <p className="text-muted-foreground">No tienes permisos de administrador.</p>
+        <Button variant="outline" onClick={handleLogout}>Cerrar sesión</Button>
+      </div>
+    </div>
+  );
 
   const statusLabels: Record<string, string> = {
     scheduled: "Programado",
