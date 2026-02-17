@@ -8,16 +8,9 @@ import { es } from "date-fns/locale";
 import { toBogotaDate } from "@/lib/dateUtils";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import TeamLogo from "@/components/TeamLogo";
 
 const TOURNAMENT_ID = "a0000000-0000-0000-0000-000000000001";
-
-const teamColorMap: Record<string, string> = {
-  vikings: "bg-team-vikings",
-  reapers: "bg-team-reapers",
-  "grey-panthers": "bg-team-panthers",
-  "rabbits-chiks": "bg-team-rabbits",
-  aguilas: "bg-team-aguilas",
-};
 
 const statusLabels: Record<string, string> = {
   scheduled: "Programado",
@@ -78,7 +71,7 @@ export default function Schedule() {
   });
 
   return (
-    <div className="container py-8">
+    <div className="container py-8 max-w-3xl mx-auto">
       <h1 className="font-display text-4xl font-bold uppercase mb-2">Programación y Resultados</h1>
       <p className="text-muted-foreground mb-6">Todos los partidos de la temporada</p>
 
@@ -115,13 +108,14 @@ export default function Schedule() {
             <Link key={match.id} to={isPlayed ? `/match/${match.id}` : "#"}>
               <Card className={`hover:shadow-md transition-shadow ${isPlayed ? "cursor-pointer" : ""}`}>
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-4">
+                  {/* Desktop layout */}
+                  <div className="hidden sm:flex items-center justify-between gap-4">
                     <Badge variant={statusColors[match.status] as any} className="text-xs shrink-0">
                       {statusLabels[match.status]}
                     </Badge>
 
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <div className={`w-3 h-3 rounded-full shrink-0 ${teamColorMap[match.home_team?.slug] || "bg-muted"}`} />
+                      <TeamLogo team={match.home_team} size={24} />
                       <span className="font-medium text-sm truncate">{match.home_team?.name}</span>
                     </div>
 
@@ -135,13 +129,51 @@ export default function Schedule() {
 
                     <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
                       <span className="font-medium text-sm truncate">{match.away_team?.name}</span>
-                      <div className={`w-3 h-3 rounded-full shrink-0 ${teamColorMap[match.away_team?.slug] || "bg-muted"}`} />
+                      <TeamLogo team={match.away_team} size={24} />
                     </div>
 
                     <div className="text-xs text-muted-foreground shrink-0 w-28 text-right">
                       {match.start_time
                         ? format(toBogotaDate(match.start_time), "d MMM HH:mm", { locale: es })
                         : "TBD"}
+                    </div>
+                  </div>
+
+                  {/* Mobile layout */}
+                  <div className="sm:hidden space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Badge variant={statusColors[match.status] as any} className="text-xs">
+                        {statusLabels[match.status]}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {match.start_time
+                          ? format(toBogotaDate(match.start_time), "d MMM HH:mm", { locale: es })
+                          : "TBD"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <TeamLogo team={match.home_team} size={22} />
+                        <span className="font-medium text-sm truncate">{match.home_team?.name}</span>
+                      </div>
+                      {isPlayed ? (
+                        <span className="font-display text-lg font-bold shrink-0">
+                          {match.reg_home_score}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <TeamLogo team={match.away_team} size={22} />
+                        <span className="font-medium text-sm truncate">{match.away_team?.name}</span>
+                      </div>
+                      {isPlayed ? (
+                        <span className="font-display text-lg font-bold shrink-0">
+                          {match.reg_away_score}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground font-display text-sm shrink-0">VS</span>
+                      )}
                     </div>
                   </div>
 

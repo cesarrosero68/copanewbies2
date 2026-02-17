@@ -3,14 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { TOURNAMENT_ID, IS_PRESEASON } from "@/lib/tournament";
-
-const teamColorMap: Record<string, string> = {
-  vikings: "bg-team-vikings",
-  reapers: "bg-team-reapers",
-  "grey-panthers": "bg-team-panthers",
-  "rabbits-chiks": "bg-team-rabbits",
-  aguilas: "bg-team-aguilas",
-};
+import TeamLogo from "@/components/TeamLogo";
 
 export default function Standings() {
   const { data: standings } = useQuery({
@@ -53,7 +46,7 @@ export default function Standings() {
                   <td className="p-3 font-bold">{i + 1}</td>
                   <td className="p-3">
                     <Link to={`/team/${s.team?.slug}`} className="flex items-center gap-2 hover:underline font-medium">
-                      <div className={`w-3 h-3 rounded-full ${teamColorMap[s.team?.slug] || "bg-muted"}`} />
+                      <TeamLogo team={s.team} size={24} />
                       {s.team?.name}
                     </Link>
                   </td>
