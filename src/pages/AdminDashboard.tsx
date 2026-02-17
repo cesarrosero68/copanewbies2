@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { ChevronLeft } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 
 const TOURNAMENT_ID = "a0000000-0000-0000-0000-000000000001";
@@ -80,18 +81,18 @@ export default function AdminDashboard() {
     </div>
   );
 
-  const statusLabels: Record<string, string> = {
-    scheduled: "Programado",
-    live: "En Vivo",
-    final: "Final",
-    locked: "Cerrado",
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-secondary text-secondary-foreground border-b border-border">
         <div className="container flex items-center justify-between h-14">
-          <h1 className="font-display text-lg font-bold uppercase">🏒 Admin Panel</h1>
+          <div className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-1 text-sm text-secondary-foreground/70 hover:text-secondary-foreground transition-colors">
+              <ChevronLeft className="w-4 h-4" />
+              Sitio
+            </Link>
+            <span className="text-secondary-foreground/30">|</span>
+            <h1 className="font-display text-lg font-bold uppercase">🏒 Admin Panel</h1>
+          </div>
           <div className="flex items-center gap-4">
             <span className="text-xs text-secondary-foreground/60">{session.user.email}</span>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
@@ -156,7 +157,6 @@ function MatchRow({ match, queryClient }: { match: any; queryClient: any }) {
   };
 
   const closeMatch = async () => {
-    // Validate goal events match scores
     const { data: goals } = await supabase
       .from("goal_events")
       .select("team_id")
@@ -176,12 +176,11 @@ function MatchRow({ match, queryClient }: { match: any; queryClient: any }) {
       return;
     }
 
-    // Determine winner for regular season
     const updates: any = { status: "final" };
     if (!isPlayoff) {
       if (expectedHome > expectedAway) updates.winner_team_id = match.home_team_id;
       else if (expectedAway > expectedHome) updates.winner_team_id = match.away_team_id;
-      else updates.winner_team_id = null; // draw
+      else updates.winner_team_id = null;
     }
 
     const { error } = await supabase.from("matches").update(updates).eq("id", match.id);
@@ -190,7 +189,6 @@ function MatchRow({ match, queryClient }: { match: any; queryClient: any }) {
       return;
     }
 
-    // Recalculate aggregates
     await supabase.rpc("recalculate_standings", { p_tournament_id: TOURNAMENT_ID });
     await supabase.rpc("recalculate_player_stats", { p_tournament_id: TOURNAMENT_ID });
 
@@ -344,8 +342,6 @@ function GoalEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: strin
     },
   });
 
-  // team_id = equipo que se BENEFICIA del gol (recibe GF)
-  // For own goal: team_id = opponent of the player who scored own goal
   const scoringTeamPlayers = teamId === homeTeamId ? homePlayers : awayPlayers;
   const defendingTeamPlayers = teamId === homeTeamId ? awayPlayers : homePlayers;
 

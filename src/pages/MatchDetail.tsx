@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toBogotaDate } from "@/lib/dateUtils";
+import TeamLogo from "@/components/TeamLogo";
 
 const teamColorMap: Record<string, string> = {
   vikings: "bg-team-vikings",
@@ -67,7 +68,7 @@ export default function MatchDetail() {
 
           <div className="flex items-center justify-center gap-8">
             <div className="text-center flex-1">
-              <div className={`w-6 h-6 rounded-full mx-auto mb-2 ${teamColorMap[match.home_team?.slug] || "bg-muted"}`} />
+              <TeamLogo team={match.home_team} size={40} className="mx-auto mb-2" />
               <h2 className="font-display text-xl font-bold">{match.home_team?.name}</h2>
             </div>
 
@@ -80,7 +81,7 @@ export default function MatchDetail() {
             )}
 
             <div className="text-center flex-1">
-              <div className={`w-6 h-6 rounded-full mx-auto mb-2 ${teamColorMap[match.away_team?.slug] || "bg-muted"}`} />
+              <TeamLogo team={match.away_team} size={40} className="mx-auto mb-2" />
               <h2 className="font-display text-xl font-bold">{match.away_team?.name}</h2>
             </div>
           </div>

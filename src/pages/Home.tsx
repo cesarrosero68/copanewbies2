@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toBogotaDate } from "@/lib/dateUtils";
 import { TOURNAMENT_ID, IS_PRESEASON } from "@/lib/tournament";
-import copaLogo from "@/assets/copa-newbies-logo.png";
+import TeamLogo from "@/components/TeamLogo";
 
 const teamColorMap: Record<string, string> = {
   vikings: "bg-team-vikings",
@@ -21,11 +21,11 @@ export default function Home() {
   const { data: standings } = useQuery({
     queryKey: ["standings"],
     queryFn: async () => {
-      const { data } = await supabase.
-      from("standings_aggregate").
-      select("*, team:teams(*)").
-      eq("tournament_id", TOURNAMENT_ID).
-      order("rank", { ascending: true });
+      const { data } = await supabase
+        .from("standings_aggregate")
+        .select("*, team:teams(*)")
+        .eq("tournament_id", TOURNAMENT_ID)
+        .order("rank", { ascending: true });
       return data || [];
     }
   });
@@ -33,13 +33,15 @@ export default function Home() {
   const { data: upcomingMatches } = useQuery({
     queryKey: ["upcoming-matches"],
     queryFn: async () => {
-      const { data } = await supabase.
-      from("matches").
-      select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)").
-      eq("tournament_id", TOURNAMENT_ID).
-      eq("status", "scheduled").
-      order("start_time", { ascending: true }).
-      limit(4);
+      const now = new Date().toISOString();
+      const { data } = await supabase
+        .from("matches")
+        .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
+        .eq("tournament_id", TOURNAMENT_ID)
+        .eq("status", "scheduled")
+        .gte("start_time", now)
+        .order("start_time", { ascending: true })
+        .limit(4);
       return data || [];
     }
   });
@@ -47,13 +49,13 @@ export default function Home() {
   const { data: recentMatches } = useQuery({
     queryKey: ["recent-matches"],
     queryFn: async () => {
-      const { data } = await supabase.
-      from("matches").
-      select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)").
-      eq("tournament_id", TOURNAMENT_ID).
-      in("status", ["final", "locked"]).
-      order("start_time", { ascending: false }).
-      limit(4);
+      const { data } = await supabase
+        .from("matches")
+        .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
+        .eq("tournament_id", TOURNAMENT_ID)
+        .in("status", ["final", "locked"])
+        .order("start_time", { ascending: false })
+        .limit(4);
       return data || [];
     },
     enabled: !IS_PRESEASON
@@ -62,12 +64,12 @@ export default function Home() {
   const { data: topScorers } = useQuery({
     queryKey: ["top-scorers"],
     queryFn: async () => {
-      const { data } = await supabase.
-      from("player_stats_aggregate").
-      select("*, player:players(*), team:teams(*)").
-      eq("tournament_id", TOURNAMENT_ID).
-      order("goals", { ascending: false }).
-      limit(5);
+      const { data } = await supabase
+        .from("player_stats_aggregate")
+        .select("*, player:players(*), team:teams(*)")
+        .eq("tournament_id", TOURNAMENT_ID)
+        .order("goals", { ascending: false })
+        .limit(5);
       return data || [];
     },
     enabled: !IS_PRESEASON
@@ -76,12 +78,12 @@ export default function Home() {
   const { data: topAssists } = useQuery({
     queryKey: ["top-assists"],
     queryFn: async () => {
-      const { data } = await supabase.
-      from("player_stats_aggregate").
-      select("*, player:players(*), team:teams(*)").
-      eq("tournament_id", TOURNAMENT_ID).
-      order("assists", { ascending: false }).
-      limit(5);
+      const { data } = await supabase
+        .from("player_stats_aggregate")
+        .select("*, player:players(*), team:teams(*)")
+        .eq("tournament_id", TOURNAMENT_ID)
+        .order("assists", { ascending: false })
+        .limit(5);
       return data || [];
     },
     enabled: !IS_PRESEASON
@@ -90,12 +92,12 @@ export default function Home() {
   const { data: topPoints } = useQuery({
     queryKey: ["top-points"],
     queryFn: async () => {
-      const { data } = await supabase.
-      from("player_stats_aggregate").
-      select("*, player:players(*), team:teams(*)").
-      eq("tournament_id", TOURNAMENT_ID).
-      order("points", { ascending: false }).
-      limit(5);
+      const { data } = await supabase
+        .from("player_stats_aggregate")
+        .select("*, player:players(*), team:teams(*)")
+        .eq("tournament_id", TOURNAMENT_ID)
+        .order("points", { ascending: false })
+        .limit(5);
       return data || [];
     },
     enabled: !IS_PRESEASON
@@ -106,33 +108,28 @@ export default function Home() {
       {/* Hero */}
       <section className="text-center py-12 rounded-xl bg-secondary relative overflow-hidden">
         <img
-
           alt="Copa Newbies II"
-          className="mx-auto h-48 md:h-64 object-contain mb-4 drop-shadow-lg" src="/lovable-uploads/192672d5-a8d2-4226-8ce6-29a76b5d1b2e.png" />
-
+          className="mx-auto h-48 md:h-64 object-contain mb-4 drop-shadow-lg"
+          src="/lovable-uploads/192672d5-a8d2-4226-8ce6-29a76b5d1b2e.png"
+        />
         <h1 className="font-display text-4xl md:text-5xl font-bold uppercase tracking-wider text-secondary-foreground">
           Copa Newbies <span className="text-primary">II</span>
         </h1>
-        <p className="mt-3 text-secondary-foreground/70 text-lg">Temporada 2026 • 5 Equipos • 20 Partidos</p>
-        {IS_PRESEASON &&
-        <Badge className="mt-4 bg-accent text-accent-foreground text-sm px-4 py-1">
-            🏒 Próximamente — Pretemporada
-          </Badge>
-        }
+        <p className="mt-3 text-secondary-foreground/70 text-lg">Temporada 2026 • 5 Equipos • 26 Partidos</p>
       </section>
 
       {/* Recent Results — hidden in PRESEASON */}
-      {!IS_PRESEASON && recentMatches && recentMatches.length > 0 &&
-      <section>
+      {!IS_PRESEASON && recentMatches && recentMatches.length > 0 && (
+        <section>
           <h2 className="font-display text-2xl font-bold uppercase mb-4">Últimos Resultados</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {recentMatches.map((match: any) =>
-          <Link key={match.id} to={`/match/${match.id}`}>
+            {recentMatches.map((match: any) => (
+              <Link key={match.id} to={`/match/${match.id}`}>
                 <Card className="hover:shadow-md transition-shadow cursor-pointer">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 flex-1">
-                        <div className={`w-3 h-3 rounded-full ${teamColorMap[match.home_team?.slug] || "bg-muted"}`} />
+                        <TeamLogo team={match.home_team} size={24} />
                         <span className="font-medium text-sm">{match.home_team?.name}</span>
                       </div>
                       <div className="flex items-center gap-2 font-display text-2xl font-bold px-4">
@@ -142,59 +139,59 @@ export default function Home() {
                       </div>
                       <div className="flex items-center gap-2 flex-1 justify-end">
                         <span className="font-medium text-sm">{match.away_team?.name}</span>
-                        <div className={`w-3 h-3 rounded-full ${teamColorMap[match.away_team?.slug] || "bg-muted"}`} />
+                        <TeamLogo team={match.away_team} size={24} />
                       </div>
                     </div>
-                    {match.start_time &&
-                <p className="text-xs text-muted-foreground text-center mt-2">
+                    {match.start_time && (
+                      <p className="text-xs text-muted-foreground text-center mt-2">
                         {format(toBogotaDate(match.start_time), "d MMM yyyy", { locale: es })}
                       </p>
-                }
-                    {match.ot_played &&
-                <Badge variant="outline" className="mx-auto mt-1 block w-fit text-xs">
+                    )}
+                    {match.ot_played && (
+                      <Badge variant="outline" className="mx-auto mt-1 block w-fit text-xs">
                         {match.so_played ? "Penales (SO)" : "Overtime (OT)"}
                       </Badge>
-                }
+                    )}
                   </CardContent>
                 </Card>
               </Link>
-          )}
+            ))}
           </div>
         </section>
-      }
+      )}
 
       {/* Upcoming Matches */}
       <section>
         <h2 className="font-display text-2xl font-bold uppercase mb-4">Próximos Partidos</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {upcomingMatches?.map((match: any) =>
-          <Card key={match.id}>
+          {upcomingMatches?.map((match: any) => (
+            <Card key={match.id}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-1">
-                    <div className={`w-3 h-3 rounded-full ${teamColorMap[match.home_team?.slug] || "bg-muted"}`} />
+                    <TeamLogo team={match.home_team} size={24} />
                     <span className="font-medium text-sm">{match.home_team?.name}</span>
                   </div>
                   <span className="text-muted-foreground font-display text-lg px-4">VS</span>
                   <div className="flex items-center gap-2 flex-1 justify-end">
                     <span className="font-medium text-sm">{match.away_team?.name}</span>
-                    <div className={`w-3 h-3 rounded-full ${teamColorMap[match.away_team?.slug] || "bg-muted"}`} />
+                    <TeamLogo team={match.away_team} size={24} />
                   </div>
                 </div>
-                {match.start_time &&
-              <p className="text-xs text-muted-foreground text-center mt-2">
+                {match.start_time && (
+                  <p className="text-xs text-muted-foreground text-center mt-2">
                     {format(toBogotaDate(match.start_time), "EEEE d MMM • HH:mm", { locale: es })}
                   </p>
-              }
+                )}
                 <Badge className="mx-auto mt-1 block w-fit text-xs" variant="secondary">
                   {match.stage === "REGULAR" ? `Partido #${match.match_number}` : match.stage}
                 </Badge>
               </CardContent>
             </Card>
+          ))}
+          {(!upcomingMatches || upcomingMatches.length === 0) && (
+            <p className="text-muted-foreground text-sm col-span-2">No hay partidos programados</p>
           )}
-          {(!upcomingMatches || upcomingMatches.length === 0) &&
-          <p className="text-muted-foreground text-sm col-span-2">No hay partidos programados</p>
-          }
         </div>
       </section>
 
@@ -215,12 +212,12 @@ export default function Home() {
                   </tr>
                 </thead>
                 <tbody>
-                  {standings?.map((s: any, i: number) =>
-                  <tr key={s.team_id} className="border-b last:border-0 hover:bg-muted/30">
+                  {standings?.map((s: any, i: number) => (
+                    <tr key={s.team_id} className="border-b last:border-0 hover:bg-muted/30">
                       <td className="p-3 font-bold">{i + 1}</td>
                       <td className="p-3">
                         <Link to={`/team/${s.team?.slug}`} className="flex items-center gap-2 hover:underline">
-                          <div className={`w-3 h-3 rounded-full ${teamColorMap[s.team?.slug] || "bg-muted"}`} />
+                          <TeamLogo team={s.team} size={24} />
                           {s.team?.name}
                         </Link>
                       </td>
@@ -228,7 +225,7 @@ export default function Home() {
                       <td className="p-3 text-center font-bold">{IS_PRESEASON ? 0 : s.points}</td>
                       <td className="p-3 text-center">{IS_PRESEASON ? 0 : s.gd > 0 ? `+${s.gd}` : s.gd}</td>
                     </tr>
-                  )}
+                  ))}
                 </tbody>
               </table>
             </CardContent>
@@ -247,16 +244,16 @@ export default function Home() {
                 <p className="text-muted-foreground text-sm">
                   {IS_PRESEASON ? "El torneo aún no ha comenzado" : !topScorers || topScorers.length === 0 ? "Sin datos aún" : ""}
                 </p>
-                {!IS_PRESEASON && topScorers?.map((ps: any, i: number) =>
-                <div key={ps.player_id} className="flex items-center justify-between py-1">
+                {!IS_PRESEASON && topScorers?.map((ps: any, i: number) => (
+                  <div key={ps.player_id} className="flex items-center justify-between py-1">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground text-sm w-5">{i + 1}.</span>
-                      <div className={`w-2 h-2 rounded-full ${teamColorMap[ps.team?.slug] || "bg-muted"}`} />
+                      <TeamLogo team={ps.team} size={20} />
                       <span className="text-sm font-medium">{ps.player?.name}</span>
                     </div>
                     <span className="font-display font-bold">{ps.goals}</span>
                   </div>
-                )}
+                ))}
               </CardContent>
             </Card>
           </div>
@@ -268,16 +265,16 @@ export default function Home() {
                 <p className="text-muted-foreground text-sm">
                   {IS_PRESEASON ? "El torneo aún no ha comenzado" : !topAssists || topAssists.length === 0 ? "Sin datos aún" : ""}
                 </p>
-                {!IS_PRESEASON && topAssists?.map((ps: any, i: number) =>
-                <div key={ps.player_id} className="flex items-center justify-between py-1">
+                {!IS_PRESEASON && topAssists?.map((ps: any, i: number) => (
+                  <div key={ps.player_id} className="flex items-center justify-between py-1">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground text-sm w-5">{i + 1}.</span>
-                      <div className={`w-2 h-2 rounded-full ${teamColorMap[ps.team?.slug] || "bg-muted"}`} />
+                      <TeamLogo team={ps.team} size={20} />
                       <span className="text-sm font-medium">{ps.player?.name}</span>
                     </div>
                     <span className="font-display font-bold">{ps.assists}</span>
                   </div>
-                )}
+                ))}
               </CardContent>
             </Card>
           </div>
@@ -289,11 +286,11 @@ export default function Home() {
                 <p className="text-muted-foreground text-sm">
                   {IS_PRESEASON ? "El torneo aún no ha comenzado" : !topPoints || topPoints.length === 0 ? "Sin datos aún" : ""}
                 </p>
-                {!IS_PRESEASON && topPoints?.map((ps: any, i: number) =>
-                <div key={ps.player_id} className="flex items-center justify-between py-1">
+                {!IS_PRESEASON && topPoints?.map((ps: any, i: number) => (
+                  <div key={ps.player_id} className="flex items-center justify-between py-1">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground text-sm w-5">{i + 1}.</span>
-                      <div className={`w-2 h-2 rounded-full ${teamColorMap[ps.team?.slug] || "bg-muted"}`} />
+                      <TeamLogo team={ps.team} size={20} />
                       <span className="text-sm font-medium">{ps.player?.name}</span>
                     </div>
                     <div className="text-right">
@@ -301,7 +298,7 @@ export default function Home() {
                       <span className="text-muted-foreground text-xs ml-1">({ps.goals}G {ps.assists}A)</span>
                     </div>
                   </div>
-                )}
+                ))}
               </CardContent>
             </Card>
           </div>
@@ -317,11 +314,11 @@ export default function Home() {
                   const gaaA = a.played > 0 ? a.gc / a.played : 999;
                   const gaaB = b.played > 0 ? b.gc / b.played : 999;
                   return gaaA - gaaB;
-                }).map((s: any, i: number) =>
-                <div key={s.team_id} className="flex items-center justify-between py-1">
+                }).map((s: any, i: number) => (
+                  <div key={s.team_id} className="flex items-center justify-between py-1">
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground text-sm w-5">{i + 1}.</span>
-                      <div className={`w-2 h-2 rounded-full ${teamColorMap[s.team?.slug] || "bg-muted"}`} />
+                      <TeamLogo team={s.team} size={20} />
                       <span className="text-sm font-medium">{s.team?.name}</span>
                     </div>
                     <div className="text-right">
@@ -329,12 +326,12 @@ export default function Home() {
                       <span className="text-muted-foreground text-xs ml-1">({s.gc}GC / {s.played}PJ)</span>
                     </div>
                   </div>
-                )}
+                ))}
               </CardContent>
             </Card>
           </div>
         </section>
       </div>
-    </div>);
-
+    </div>
+  );
 }

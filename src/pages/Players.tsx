@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { TOURNAMENT_ID, IS_PRESEASON } from "@/lib/tournament";
+import TeamLogo from "@/components/TeamLogo";
 
 export default function Players() {
   const [teamFilter, setTeamFilter] = useState("all");
@@ -31,7 +32,6 @@ export default function Players() {
       if (teamFilter !== "all") {
         query = query.eq("team_id", teamFilter);
       } else {
-        // Filter to tournament teams
         const teamIds = teams?.map((t: any) => t.id) || [];
         if (teamIds.length > 0) query = query.in("team_id", teamIds);
       }
@@ -78,12 +78,15 @@ export default function Players() {
     return s?.played || 0;
   };
 
+  const selectedTeam = teams?.find((t: any) => t.id === teamFilter);
+
   return (
     <div className="container py-8">
       <h1 className="font-display text-4xl font-bold uppercase mb-2">Jugadores</h1>
       <p className="text-muted-foreground mb-6">Roster y estadísticas por equipo</p>
 
-      <div className="mb-6">
+      <div className="flex items-center gap-3 mb-6">
+        {selectedTeam && <TeamLogo team={selectedTeam} size={32} />}
         <Select value={teamFilter} onValueChange={setTeamFilter}>
           <SelectTrigger className="w-64">
             <SelectValue placeholder="Filtrar por equipo" />
@@ -123,7 +126,10 @@ export default function Players() {
                     <td className="p-3 text-muted-foreground">{p.position || "-"}</td>
                     {teamFilter === "all" && (
                       <td className="p-3">
-                        <span className="text-xs px-2 py-1 rounded-full bg-muted">{p.team?.name}</span>
+                        <div className="flex items-center gap-2">
+                          <TeamLogo team={p.team} size={20} />
+                          <span className="text-xs">{p.team?.name}</span>
+                        </div>
                       </td>
                     )}
                     <td className="p-3 text-center">{pj}</td>
