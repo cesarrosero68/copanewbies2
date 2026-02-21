@@ -365,10 +365,10 @@ function GoalEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: strin
       if (isOwnGoal) {
         insert.scorer_player_id = null;
         insert.assist_player_id = null;
-        insert.own_goal_by_player_id = ownGoalPlayerId || null;
+        insert.own_goal_by_player_id = ownGoalPlayerId && ownGoalPlayerId !== "none" ? ownGoalPlayerId : null;
       } else {
         insert.scorer_player_id = scorerId;
-        insert.assist_player_id = assistId || null;
+        insert.assist_player_id = assistId && assistId !== "none" ? assistId : null;
         insert.own_goal_by_player_id = null;
       }
       const { error } = await supabase.from("goal_events").insert(insert);
@@ -483,7 +483,7 @@ function GoalEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: strin
               <Select value={assistId} onValueChange={setAssistId}>
                 <SelectTrigger><SelectValue placeholder="Ninguno" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Ninguno</SelectItem>
+                  <SelectItem value="none">Ninguno</SelectItem>
                   {scoringTeamPlayers?.map((p: any) => (
                     <SelectItem key={p.id} value={p.id}>#{p.jersey_number} {p.name}</SelectItem>
                   ))}
@@ -497,7 +497,7 @@ function GoalEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: strin
             <Select value={ownGoalPlayerId} onValueChange={setOwnGoalPlayerId}>
               <SelectTrigger><SelectValue placeholder="Seleccionar (opcional)" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Desconocido</SelectItem>
+                <SelectItem value="none">Desconocido</SelectItem>
                 {defendingTeamPlayers?.map((p: any) => (
                   <SelectItem key={p.id} value={p.id}>#{p.jersey_number} {p.name}</SelectItem>
                 ))}
