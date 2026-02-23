@@ -623,6 +623,9 @@ function PenaltyEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: st
       if (gMins < 0 || gMins > 60) throw new Error("Minuto del partido debe ser entre 0 y 60");
       if (gSecs < 0 || gSecs > 59) throw new Error("Segundos debe ser entre 0 y 59");
       const timeMmss = `${String(gMins).padStart(2, "0")}:${String(gSecs).padStart(2, "0")}`;
+      const pMins = parseInt(penaltyMins) || 0;
+      const pSecs = parseInt(penaltySecs) || 0;
+      const durationMmss = `${String(pMins).padStart(2, "0")}:${String(pSecs).padStart(2, "0")}`;
       const { error } = await supabase.from("penalty_events").insert({
         match_id: matchId,
         team_id: teamId,
@@ -630,6 +633,7 @@ function PenaltyEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: st
         period: period,
         time_mmss: timeMmss,
         penalty_type: penaltyType,
+        duration_mmss: durationMmss,
       });
       if (error) throw error;
     },

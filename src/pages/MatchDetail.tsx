@@ -45,6 +45,20 @@ export default function MatchDetail() {
     enabled: !!id,
   });
 
+  const { data: penaltyEvents } = useQuery({
+    queryKey: ["match-penalties", id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("penalty_events")
+        .select("*, player:players(*), team:teams(*)")
+        .eq("match_id", id!)
+        .order("period", { ascending: true })
+        .order("time_mmss", { ascending: true });
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
   if (!match) return <div className="container py-8 text-center text-muted-foreground">Cargando...</div>;
 
   const isPlayed = match.status === "final" || match.status === "locked";
@@ -133,6 +147,47 @@ export default function MatchDetail() {
                             (asist. {goal.assist.name})
                           </span>
                         )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Penalty Events by Period */}
+      {isPlayed && penaltyEvents && penaltyEvents.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="font-display text-xl uppercase">Detalle de Sanciones</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {periods.map((period) => {
+              const periodPenalties = penaltyEvents.filter((p: any) => p.period === period);
+              if (periodPenalties.length === 0) return null;
+              return (
+                <div key={period}>
+                  <h3 className="font-display text-sm uppercase text-muted-foreground mb-2">
+                    {period === "OT" ? "Overtime" : `Periodo ${period}`}
+                  </h3>
+                  <div className="space-y-2">
+                    {periodPenalties.map((pen: any) => (
+                      <div
+                        key={pen.id}
+                        className={`flex items-center gap-3 p-2 rounded-md ${
+                          pen.team_id === match.home_team_id ? "bg-muted/50" : "bg-accent/50"
+                        }`}
+                      >
+                        <span className="text-xs text-muted-foreground font-mono w-12">{pen.time_mmss}</span>
+                        <div className={`w-2 h-2 rounded-full ${teamColorMap[pen.team?.slug] || "bg-muted"}`} />
+                        <span className="font-medium text-sm">
+                          🏒 #{pen.player?.jersey_number} {pen.player?.name}
+                        </span>
+                        <Badge variant="outline" className="text-xs">
+                          {pen.penalty_type} — {pen.duration_mmss || "1:30"}
+                        </Badge>
                       </div>
                     ))}
                   </div>
