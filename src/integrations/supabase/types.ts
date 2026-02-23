@@ -201,6 +201,7 @@ export type Database = {
       penalty_events: {
         Row: {
           created_at: string
+          duration_mmss: string
           id: string
           match_id: string
           penalty_type: string
@@ -211,6 +212,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          duration_mmss?: string
           id?: string
           match_id: string
           penalty_type: string
@@ -221,6 +223,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          duration_mmss?: string
           id?: string
           match_id?: string
           penalty_type?: string

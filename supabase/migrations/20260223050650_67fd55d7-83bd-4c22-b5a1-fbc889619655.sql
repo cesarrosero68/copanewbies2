@@ -1,0 +1,1 @@
+ALTER TABLE public.penalty_events ADD COLUMN duration_mmss text NOT NULL DEFAULT '01:30';

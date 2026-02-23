@@ -62,8 +62,26 @@ export default function Playoffs() {
     },
   });
 
-  const getMatch = (stage: string) =>
-    playoffMatches?.find((m: any) => m.stage === stage);
+  // Check if all regular season matches are finished
+  const { data: regularMatches } = useQuery({
+    queryKey: ["regular-matches-status"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("matches")
+        .select("id, status")
+        .eq("tournament_id", TOURNAMENT_ID)
+        .eq("stage", "REGULAR");
+      return data || [];
+    },
+  });
+
+  const allRegularDone = regularMatches && regularMatches.length > 0 &&
+    regularMatches.every((m: any) => m.status === "final" || m.status === "locked");
+
+  const getMatch = (stage: string) => {
+    if (!allRegularDone) return undefined;
+    return playoffMatches?.find((m: any) => m.stage === stage);
+  };
 
   return (
     <div className="container py-8">

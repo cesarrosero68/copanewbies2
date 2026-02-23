@@ -123,7 +123,7 @@ function FairPlayTable({ teams }: { teams: any[] }) {
       const matchIds = matches.map((m: any) => m.id);
       const { data: penalties } = await supabase
         .from("penalty_events")
-        .select("match_id, team_id, time_mmss")
+        .select("match_id, team_id, duration_mmss")
         .in("match_id", matchIds);
 
       return { matchdays, penalties: penalties || [], matchIdToDay: Object.fromEntries(matchIdToDay) };
@@ -136,10 +136,10 @@ function FairPlayTable({ teams }: { teams: any[] }) {
 
   const { matchdays, penalties, matchIdToDay } = penaltyData as any;
 
-  // Parse time_mmss to minutes
-  const parseMinutes = (time: string): number => {
-    const parts = time.split(":");
-    return parseInt(parts[0] || "0") + (parseInt(parts[1] || "0") > 0 ? 1 : 0);
+  // Parse duration_mmss to total seconds, then display as minutes
+  const parseDurationSeconds = (duration: string): number => {
+    const parts = duration.split(":");
+    return (parseInt(parts[0] || "0") * 60) + parseInt(parts[1] || "0");
   };
 
   // Build data: team -> matchday -> total minutes
@@ -148,7 +148,7 @@ function FairPlayTable({ teams }: { teams: any[] }) {
       const dayPenalties = penalties.filter(
         (p: any) => p.team_id === team.id && matchIdToDay[p.match_id] === dayIdx
       );
-      return dayPenalties.reduce((sum: number, p: any) => sum + parseMinutes(p.time_mmss), 0);
+      return dayPenalties.reduce((sum: number, p: any) => sum + parseDurationSeconds(p.duration_mmss || "01:30"), 0);
     });
     const total = byDay.reduce((a: number, b: number) => a + b, 0);
     return { team, byDay, total };
@@ -179,10 +179,14 @@ function FairPlayTable({ teams }: { teams: any[] }) {
                     <span className="hidden sm:inline">{row.team.name}</span>
                   </div>
                 </td>
-                {row.byDay.map((mins: number, i: number) => (
-                  <td key={i} className="p-3 text-center">{mins > 0 ? `${mins}'` : "-"}</td>
-                ))}
-                <td className="p-3 text-center font-display font-bold">{row.total > 0 ? `${row.total}'` : "-"}</td>
+                {row.byDay.map((secs: number, i: number) => {
+                  const m = Math.floor(secs / 60);
+                  const s = secs % 60;
+                  return <td key={i} className="p-3 text-center">{secs > 0 ? `${m}:${String(s).padStart(2,"0")}` : "-"}</td>;
+                })}
+                {(() => { const m = Math.floor(row.total / 60); const s = row.total % 60; return (
+                  <td className="p-3 text-center font-display font-bold">{row.total > 0 ? `${m}:${String(s).padStart(2,"0")}` : "-"}</td>
+                ); })()}
               </tr>
             ))}
           </tbody>
