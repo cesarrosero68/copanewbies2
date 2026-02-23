@@ -198,6 +198,61 @@ export type Database = {
           },
         ]
       }
+      penalty_events: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          penalty_type: string
+          period: string
+          player_id: string
+          team_id: string
+          time_mmss: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          penalty_type: string
+          period: string
+          player_id: string
+          team_id: string
+          time_mmss: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          penalty_type?: string
+          period?: string
+          player_id?: string
+          team_id?: string
+          time_mmss?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "penalty_events_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "penalty_events_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "penalty_events_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_stats_aggregate: {
         Row: {
           assists: number
