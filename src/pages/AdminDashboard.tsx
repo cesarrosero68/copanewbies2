@@ -523,47 +523,55 @@ function GoalEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: strin
 }
 
 const PENALTY_TYPES = [
-  { code: "BC", desc: "Body Checking" },
-  { code: "BDG", desc: "Boarding" },
-  { code: "BE", desc: "Bench Minor" },
-  { code: "BP", desc: "Broken Play" },
-  { code: "BS", desc: "Butt-Ending" },
-  { code: "CC", desc: "Cross-Checking" },
-  { code: "CFB", desc: "Checking From Behind" },
-  { code: "CH", desc: "Charging" },
-  { code: "DG", desc: "Delay of Game" },
-  { code: "ELB", desc: "Elbowing" },
-  { code: "FI", desc: "Fighting" },
-  { code: "FOP", desc: "Falling on Puck" },
-  { code: "FOV", desc: "Face-Off Violation" },
-  { code: "GE", desc: "Game Ejection" },
-  { code: "GM", desc: "Game Misconduct" },
-  { code: "HKG", desc: "Hooking" },
-  { code: "HO", desc: "Holding" },
-  { code: "HP", desc: "High-Sticking (Puck)" },
-  { code: "HS", desc: "High-Sticking" },
-  { code: "IE", desc: "Illegal Equipment" },
-  { code: "INT", desc: "Interference" },
-  { code: "INTG", desc: "Interference on Goaltender" },
-  { code: "KNE", desc: "Kneeing" },
-  { code: "MP", desc: "Misconduct Penalty" },
-  { code: "MSC", desc: "Misconduct" },
-  { code: "OA", desc: "Other/Altercation" },
-  { code: "PS", desc: "Penalty Shot" },
-  { code: "RO", desc: "Roughing" },
-  { code: "SL", desc: "Slashing" },
-  { code: "SP", desc: "Spearing" },
-  { code: "TMM", desc: "Too Many Men" },
-  { code: "TR", desc: "Tripping" },
-  { code: "USC", desc: "Unsportsmanlike Conduct" },
+  { code: "BC", desc: "BODY CHECKING" },
+  { code: "BDG", desc: "BOARDING" },
+  { code: "BE", desc: "BUTT ENDING" },
+  { code: "BP", desc: "BENCH PENALTY" },
+  { code: "BS", desc: "BROKEN STICK" },
+  { code: "CC", desc: "CROSS CHECKING" },
+  { code: "CFB", desc: "CC FROM BEHIND" },
+  { code: "CH", desc: "CHARGING" },
+  { code: "DG", desc: "DELAY OF GAME" },
+  { code: "ELB", desc: "ELBOWING" },
+  { code: "FI", desc: "FIGHTING" },
+  { code: "FOP", desc: "FALLING ON PUCK" },
+  { code: "FOV", desc: "FACE OFF VIOL." },
+  { code: "GE", desc: "GAME EJECTION" },
+  { code: "GM", desc: "GAME MISSCONDUCT" },
+  { code: "HKG", desc: "HOOKING" },
+  { code: "HO", desc: "HOLDING" },
+  { code: "HP", desc: "HAND PASS" },
+  { code: "HS", desc: "HIGH STICK" },
+  { code: "IE", desc: "ILLEGAL EQUIPMENT" },
+  { code: "INT", desc: "INTERFERENCE" },
+  { code: "INTG", desc: "INT. OF GOALTENDER" },
+  { code: "KNE", desc: "KNEEING" },
+  { code: "MP", desc: "MATCH PENALTY" },
+  { code: "MSC", desc: "MISSCONDUCT" },
+  { code: "OA", desc: "OFFICIAL ABUSE" },
+  { code: "PS", desc: "PENALTY SHOOT" },
+  { code: "RO", desc: "ROUGHING" },
+  { code: "SL", desc: "SLASHING" },
+  { code: "SP", desc: "SPEARING" },
+  { code: "TMM", desc: "TOO MANY MEN" },
+  { code: "TR", desc: "TRIPPING" },
+  { code: "USC", desc: "UNSPORTSMANLIKE" },
+];
+
+const PREDEFINED_TIMES = [
+  { label: "1:30", value: "01:30" },
+  { label: "4:00", value: "04:00" },
+  { label: "10:00", value: "10:00" },
+  { label: "Manual", value: "manual" },
 ];
 
 function PenaltyEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: string; homeTeamId: string; awayTeamId: string }) {
   const queryClient = useQueryClient();
   const [teamId, setTeamId] = useState(homeTeamId);
   const [period, setPeriod] = useState("1");
-  const [minutes, setMinutes] = useState("");
-  const [seconds, setSeconds] = useState("");
+  const [timePreset, setTimePreset] = useState("01:30");
+  const [minutes, setMinutes] = useState("1");
+  const [seconds, setSeconds] = useState("30");
   const [playerId, setPlayerId] = useState("");
   const [penaltyType, setPenaltyType] = useState("");
 
@@ -625,8 +633,9 @@ function PenaltyEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: st
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-penalties", matchId] });
-      setMinutes("");
-      setSeconds("");
+      setTimePreset("01:30");
+      setMinutes("1");
+      setSeconds("30");
       setPlayerId("");
       setPenaltyType("");
       toast({ title: "Sanción registrada" });
@@ -701,16 +710,37 @@ function PenaltyEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: st
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label className="text-xs">Minutos (0-60)</Label>
-            <Input type="number" min={0} max={60} value={minutes} onChange={(e) => setMinutes(e.target.value)} placeholder="00" />
-          </div>
-          <div>
-            <Label className="text-xs">Segundos (0-59)</Label>
-            <Input type="number" min={0} max={59} value={seconds} onChange={(e) => setSeconds(e.target.value)} placeholder="00" />
-          </div>
+        <div>
+          <Label className="text-xs">Tiempo de sanción</Label>
+          <Select value={timePreset} onValueChange={(v) => {
+            setTimePreset(v);
+            if (v !== "manual") {
+              const [m, s] = v.split(":");
+              setMinutes(String(parseInt(m)));
+              setSeconds(String(parseInt(s)));
+            }
+          }}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {PREDEFINED_TIMES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+
+        {timePreset === "manual" && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Minutos (0-60)</Label>
+              <Input type="number" min={0} max={60} value={minutes} onChange={(e) => setMinutes(e.target.value)} placeholder="00" />
+            </div>
+            <div>
+              <Label className="text-xs">Segundos (0-59)</Label>
+              <Input type="number" min={0} max={59} value={seconds} onChange={(e) => setSeconds(e.target.value)} placeholder="00" />
+            </div>
+          </div>
+        )}
 
         <div>
           <Label className="text-xs">Jugador</Label>

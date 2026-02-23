@@ -115,7 +115,7 @@ export default function Schedule() {
                     </Badge>
 
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      <TeamLogo team={match.home_team} size={24} />
+                      <TeamLogo team={match.home_team} size={40} />
                       <span className="font-medium text-sm truncate">{match.home_team?.name}</span>
                     </div>
 
@@ -129,7 +129,7 @@ export default function Schedule() {
 
                     <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
                       <span className="font-medium text-sm truncate">{match.away_team?.name}</span>
-                      <TeamLogo team={match.away_team} size={24} />
+                      <TeamLogo team={match.away_team} size={40} />
                     </div>
 
                     <div className="text-xs text-muted-foreground shrink-0 w-28 text-right">
@@ -153,7 +153,7 @@ export default function Schedule() {
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <TeamLogo team={match.home_team} size={22} />
+                        <TeamLogo team={match.home_team} size={36} />
                         <span className="font-medium text-sm truncate">{match.home_team?.name}</span>
                       </div>
                       {isPlayed ? (
@@ -164,7 +164,7 @@ export default function Schedule() {
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <TeamLogo team={match.away_team} size={22} />
+                        <TeamLogo team={match.away_team} size={36} />
                         <span className="font-medium text-sm truncate">{match.away_team?.name}</span>
                       </div>
                       {isPlayed ? (

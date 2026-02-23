@@ -86,7 +86,7 @@ export default function Players() {
       <p className="text-muted-foreground mb-6">Roster y estadísticas por equipo</p>
 
       <div className="flex items-center gap-3 mb-6">
-        {selectedTeam && <TeamLogo team={selectedTeam} size={32} />}
+        {selectedTeam && <TeamLogo team={selectedTeam} size={40} />}
         <Select value={teamFilter} onValueChange={setTeamFilter}>
           <SelectTrigger className="w-64">
             <SelectValue placeholder="Filtrar por equipo" />
@@ -127,7 +127,7 @@ export default function Players() {
                     {teamFilter === "all" && (
                       <td className="p-3">
                         <div className="flex items-center gap-2">
-                          <TeamLogo team={p.team} size={20} />
+                          <TeamLogo team={p.team} size={32} />
                           <span className="text-xs">{p.team?.name}</span>
                         </div>
                       </td>
