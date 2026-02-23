@@ -129,7 +129,7 @@ export default function Home() {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 flex-1">
-                        <TeamLogo team={match.home_team} size={24} />
+                        <TeamLogo team={match.home_team} size={40} />
                         <span className="font-medium text-sm">{match.home_team?.name}</span>
                       </div>
                       <div className="flex items-center gap-2 font-display text-2xl font-bold px-4">
@@ -139,7 +139,7 @@ export default function Home() {
                       </div>
                       <div className="flex items-center gap-2 flex-1 justify-end">
                         <span className="font-medium text-sm">{match.away_team?.name}</span>
-                        <TeamLogo team={match.away_team} size={24} />
+                        <TeamLogo team={match.away_team} size={40} />
                       </div>
                     </div>
                     {match.start_time && (
@@ -169,13 +169,13 @@ export default function Home() {
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-1">
-                    <TeamLogo team={match.home_team} size={24} />
+                    <TeamLogo team={match.home_team} size={40} />
                     <span className="font-medium text-sm">{match.home_team?.name}</span>
                   </div>
                   <span className="text-muted-foreground font-display text-lg px-4">VS</span>
                   <div className="flex items-center gap-2 flex-1 justify-end">
                     <span className="font-medium text-sm">{match.away_team?.name}</span>
-                    <TeamLogo team={match.away_team} size={24} />
+                    <TeamLogo team={match.away_team} size={40} />
                   </div>
                 </div>
                 {match.start_time && (
@@ -217,7 +217,7 @@ export default function Home() {
                       <td className="p-3 font-bold">{i + 1}</td>
                       <td className="p-3">
                         <Link to={`/team/${s.team?.slug}`} className="flex items-center gap-2 hover:underline">
-                          <TeamLogo team={s.team} size={24} />
+                          <TeamLogo team={s.team} size={36} />
                           {s.team?.name}
                         </Link>
                       </td>

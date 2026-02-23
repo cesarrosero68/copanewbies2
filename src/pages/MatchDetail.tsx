@@ -68,7 +68,7 @@ export default function MatchDetail() {
 
           <div className="flex items-center justify-center gap-8">
             <div className="text-center flex-1">
-              <TeamLogo team={match.home_team} size={40} className="mx-auto mb-2" />
+              <TeamLogo team={match.home_team} size={48} className="mx-auto mb-2" />
               <h2 className="font-display text-xl font-bold">{match.home_team?.name}</h2>
             </div>
 
@@ -81,7 +81,7 @@ export default function MatchDetail() {
             )}
 
             <div className="text-center flex-1">
-              <TeamLogo team={match.away_team} size={40} className="mx-auto mb-2" />
+              <TeamLogo team={match.away_team} size={48} className="mx-auto mb-2" />
               <h2 className="font-display text-xl font-bold">{match.away_team?.name}</h2>
             </div>
           </div>
