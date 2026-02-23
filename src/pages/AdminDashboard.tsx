@@ -569,9 +569,11 @@ function PenaltyEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: st
   const queryClient = useQueryClient();
   const [teamId, setTeamId] = useState(homeTeamId);
   const [period, setPeriod] = useState("1");
+  const [gameMinutes, setGameMinutes] = useState("");
+  const [gameSeconds, setGameSeconds] = useState("00");
   const [timePreset, setTimePreset] = useState("01:30");
-  const [minutes, setMinutes] = useState("1");
-  const [seconds, setSeconds] = useState("30");
+  const [penaltyMins, setPenaltyMins] = useState("1");
+  const [penaltySecs, setPenaltySecs] = useState("30");
   const [playerId, setPlayerId] = useState("");
   const [penaltyType, setPenaltyType] = useState("");
 
@@ -616,11 +618,11 @@ function PenaltyEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: st
 
   const addPenalty = useMutation({
     mutationFn: async () => {
-      const mins = parseInt(minutes) || 0;
-      const secs = parseInt(seconds) || 0;
-      if (mins < 0 || mins > 60) throw new Error("Minutos debe ser entre 0 y 60");
-      if (secs < 0 || secs > 59) throw new Error("Segundos debe ser entre 0 y 59");
-      const timeMmss = `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+      const gMins = parseInt(gameMinutes) || 0;
+      const gSecs = parseInt(gameSeconds) || 0;
+      if (gMins < 0 || gMins > 60) throw new Error("Minuto del partido debe ser entre 0 y 60");
+      if (gSecs < 0 || gSecs > 59) throw new Error("Segundos debe ser entre 0 y 59");
+      const timeMmss = `${String(gMins).padStart(2, "0")}:${String(gSecs).padStart(2, "0")}`;
       const { error } = await supabase.from("penalty_events").insert({
         match_id: matchId,
         team_id: teamId,
@@ -633,9 +635,11 @@ function PenaltyEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: st
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-penalties", matchId] });
+      setGameMinutes("");
+      setGameSeconds("00");
       setTimePreset("01:30");
-      setMinutes("1");
-      setSeconds("30");
+      setPenaltyMins("1");
+      setPenaltySecs("30");
       setPlayerId("");
       setPenaltyType("");
       toast({ title: "Sanción registrada" });
@@ -654,7 +658,7 @@ function PenaltyEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: st
     },
   });
 
-  const canAdd = !!playerId && !!penaltyType && (minutes !== "" || seconds !== "");
+  const canAdd = !!playerId && !!penaltyType && gameMinutes !== "";
 
   return (
     <div>
@@ -710,14 +714,25 @@ function PenaltyEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: st
           </div>
         </div>
 
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs">Minuto del partido</Label>
+            <Input type="number" min={0} max={60} value={gameMinutes} onChange={(e) => setGameMinutes(e.target.value)} placeholder="00" />
+          </div>
+          <div>
+            <Label className="text-xs">Segundos</Label>
+            <Input type="number" min={0} max={59} value={gameSeconds} onChange={(e) => setGameSeconds(e.target.value)} placeholder="00" />
+          </div>
+        </div>
+
         <div>
-          <Label className="text-xs">Tiempo de sanción</Label>
+          <Label className="text-xs">Duración de sanción</Label>
           <Select value={timePreset} onValueChange={(v) => {
             setTimePreset(v);
             if (v !== "manual") {
               const [m, s] = v.split(":");
-              setMinutes(String(parseInt(m)));
-              setSeconds(String(parseInt(s)));
+              setPenaltyMins(String(parseInt(m)));
+              setPenaltySecs(String(parseInt(s)));
             }
           }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -732,12 +747,12 @@ function PenaltyEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: st
         {timePreset === "manual" && (
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-xs">Minutos (0-60)</Label>
-              <Input type="number" min={0} max={60} value={minutes} onChange={(e) => setMinutes(e.target.value)} placeholder="00" />
+              <Label className="text-xs">Min. sanción</Label>
+              <Input type="number" min={0} max={60} value={penaltyMins} onChange={(e) => setPenaltyMins(e.target.value)} placeholder="00" />
             </div>
             <div>
-              <Label className="text-xs">Segundos (0-59)</Label>
-              <Input type="number" min={0} max={59} value={seconds} onChange={(e) => setSeconds(e.target.value)} placeholder="00" />
+              <Label className="text-xs">Seg. sanción</Label>
+              <Input type="number" min={0} max={59} value={penaltySecs} onChange={(e) => setPenaltySecs(e.target.value)} placeholder="00" />
             </div>
           </div>
         )}
