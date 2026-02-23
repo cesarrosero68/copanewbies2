@@ -246,6 +246,14 @@ function MatchRow({ match, queryClient }: { match: any; queryClient: any }) {
                 <GoalEventsManager matchId={match.id} homeTeamId={match.home_team_id} awayTeamId={match.away_team_id} />
               </DialogContent>
             </Dialog>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size="sm" variant="ghost">Sanciones</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                <PenaltyEventsManager matchId={match.id} homeTeamId={match.home_team_id} awayTeamId={match.away_team_id} />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -508,6 +516,228 @@ function GoalEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: strin
 
         <Button onClick={() => addGoal.mutate()} disabled={!canAdd} className="w-full">
           Agregar Gol
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+const PENALTY_TYPES = [
+  { code: "BC", desc: "Body Checking" },
+  { code: "BDG", desc: "Boarding" },
+  { code: "BE", desc: "Bench Minor" },
+  { code: "BP", desc: "Broken Play" },
+  { code: "BS", desc: "Butt-Ending" },
+  { code: "CC", desc: "Cross-Checking" },
+  { code: "CFB", desc: "Checking From Behind" },
+  { code: "CH", desc: "Charging" },
+  { code: "DG", desc: "Delay of Game" },
+  { code: "ELB", desc: "Elbowing" },
+  { code: "FI", desc: "Fighting" },
+  { code: "FOP", desc: "Falling on Puck" },
+  { code: "FOV", desc: "Face-Off Violation" },
+  { code: "GE", desc: "Game Ejection" },
+  { code: "GM", desc: "Game Misconduct" },
+  { code: "HKG", desc: "Hooking" },
+  { code: "HO", desc: "Holding" },
+  { code: "HP", desc: "High-Sticking (Puck)" },
+  { code: "HS", desc: "High-Sticking" },
+  { code: "IE", desc: "Illegal Equipment" },
+  { code: "INT", desc: "Interference" },
+  { code: "INTG", desc: "Interference on Goaltender" },
+  { code: "KNE", desc: "Kneeing" },
+  { code: "MP", desc: "Misconduct Penalty" },
+  { code: "MSC", desc: "Misconduct" },
+  { code: "OA", desc: "Other/Altercation" },
+  { code: "PS", desc: "Penalty Shot" },
+  { code: "RO", desc: "Roughing" },
+  { code: "SL", desc: "Slashing" },
+  { code: "SP", desc: "Spearing" },
+  { code: "TMM", desc: "Too Many Men" },
+  { code: "TR", desc: "Tripping" },
+  { code: "USC", desc: "Unsportsmanlike Conduct" },
+];
+
+function PenaltyEventsManager({ matchId, homeTeamId, awayTeamId }: { matchId: string; homeTeamId: string; awayTeamId: string }) {
+  const queryClient = useQueryClient();
+  const [teamId, setTeamId] = useState(homeTeamId);
+  const [period, setPeriod] = useState("1");
+  const [minutes, setMinutes] = useState("");
+  const [seconds, setSeconds] = useState("");
+  const [playerId, setPlayerId] = useState("");
+  const [penaltyType, setPenaltyType] = useState("");
+
+  const { data: penalties } = useQuery({
+    queryKey: ["admin-penalties", matchId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("penalty_events")
+        .select("*, player:players(*), team:teams(*)")
+        .eq("match_id", matchId)
+        .order("period")
+        .order("time_mmss");
+      return data || [];
+    },
+  });
+
+  const { data: homePlayers } = useQuery({
+    queryKey: ["players", homeTeamId],
+    queryFn: async () => {
+      const { data } = await supabase.from("players").select("*").eq("team_id", homeTeamId).order("jersey_number");
+      return data || [];
+    },
+  });
+
+  const { data: awayPlayers } = useQuery({
+    queryKey: ["players", awayTeamId],
+    queryFn: async () => {
+      const { data } = await supabase.from("players").select("*").eq("team_id", awayTeamId).order("jersey_number");
+      return data || [];
+    },
+  });
+
+  const { data: teams } = useQuery({
+    queryKey: ["match-teams", homeTeamId, awayTeamId],
+    queryFn: async () => {
+      const { data } = await supabase.from("teams").select("*").in("id", [homeTeamId, awayTeamId]);
+      return data || [];
+    },
+  });
+
+  const currentPlayers = teamId === homeTeamId ? homePlayers : awayPlayers;
+
+  const addPenalty = useMutation({
+    mutationFn: async () => {
+      const mins = parseInt(minutes) || 0;
+      const secs = parseInt(seconds) || 0;
+      if (mins < 0 || mins > 60) throw new Error("Minutos debe ser entre 0 y 60");
+      if (secs < 0 || secs > 59) throw new Error("Segundos debe ser entre 0 y 59");
+      const timeMmss = `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+      const { error } = await supabase.from("penalty_events").insert({
+        match_id: matchId,
+        team_id: teamId,
+        player_id: playerId,
+        period: period,
+        time_mmss: timeMmss,
+        penalty_type: penaltyType,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-penalties", matchId] });
+      setMinutes("");
+      setSeconds("");
+      setPlayerId("");
+      setPenaltyType("");
+      toast({ title: "Sanción registrada" });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const deletePenalty = useMutation({
+    mutationFn: async (penaltyId: string) => {
+      const { error } = await supabase.from("penalty_events").delete().eq("id", penaltyId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-penalties", matchId] });
+      toast({ title: "Sanción eliminada" });
+    },
+  });
+
+  const canAdd = !!playerId && !!penaltyType && (minutes !== "" || seconds !== "");
+
+  return (
+    <div>
+      <DialogHeader>
+        <DialogTitle className="font-display text-lg uppercase">Sanciones</DialogTitle>
+      </DialogHeader>
+
+      <div className="mt-4 space-y-3">
+        {penalties?.map((p: any) => (
+          <div key={p.id} className="flex items-center justify-between p-2 bg-muted rounded text-sm">
+            <div>
+              <span className="font-mono text-xs mr-2">P{p.period} {p.time_mmss}</span>
+              <span className="font-medium">#{p.player?.jersey_number} {p.player?.name}</span>
+              <Badge variant="outline" className="ml-2 text-xs">{p.penalty_type}</Badge>
+              <span className="text-xs text-muted-foreground ml-2">- {p.team?.name}</span>
+            </div>
+            <Button size="sm" variant="ghost" className="text-destructive h-7" onClick={() => deletePenalty.mutate(p.id)}>
+              ✕
+            </Button>
+          </div>
+        ))}
+        {(!penalties || penalties.length === 0) && (
+          <p className="text-sm text-muted-foreground">Sin sanciones registradas</p>
+        )}
+      </div>
+
+      <div className="mt-6 space-y-3 border-t pt-4">
+        <h4 className="font-medium text-sm">Agregar Sanción</h4>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs">Equipo</Label>
+            <Select value={teamId} onValueChange={(v) => { setTeamId(v); setPlayerId(""); }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {teams?.map((t: any) => (
+                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Periodo</Label>
+            <Select value={period} onValueChange={setPeriod}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1er</SelectItem>
+                <SelectItem value="2">2do</SelectItem>
+                <SelectItem value="3">3er</SelectItem>
+                <SelectItem value="OT">OT</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs">Minutos (0-60)</Label>
+            <Input type="number" min={0} max={60} value={minutes} onChange={(e) => setMinutes(e.target.value)} placeholder="00" />
+          </div>
+          <div>
+            <Label className="text-xs">Segundos (0-59)</Label>
+            <Input type="number" min={0} max={59} value={seconds} onChange={(e) => setSeconds(e.target.value)} placeholder="00" />
+          </div>
+        </div>
+
+        <div>
+          <Label className="text-xs">Jugador</Label>
+          <Select value={playerId} onValueChange={setPlayerId}>
+            <SelectTrigger><SelectValue placeholder="Seleccionar jugador" /></SelectTrigger>
+            <SelectContent>
+              {currentPlayers?.map((p: any) => (
+                <SelectItem key={p.id} value={p.id}>#{p.jersey_number} {p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label className="text-xs">Tipo de sanción</Label>
+          <Select value={penaltyType} onValueChange={setPenaltyType}>
+            <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
+            <SelectContent>
+              {PENALTY_TYPES.map((pt) => (
+                <SelectItem key={pt.code} value={pt.code}>{pt.code} - {pt.desc}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Button onClick={() => addPenalty.mutate()} disabled={!canAdd} className="w-full">
+          Agregar Sanción
         </Button>
       </div>
     </div>
