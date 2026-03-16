@@ -120,7 +120,7 @@ export default function Schedule() {
                       <span className="font-medium text-sm truncate">{match.home_team?.name}</span>
                     </div>
 
-                    {isPlayed ? (
+                    {(isPlayed || isLive) ? (
                       <div className="font-display text-xl font-bold px-3 shrink-0">
                         {match.reg_home_score} - {match.reg_away_score}
                       </div>
