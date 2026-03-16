@@ -238,6 +238,30 @@ export default function Home() {
         {/* Leaders */}
         <section className="space-y-6">
           <div>
+            <h2 className="font-display text-2xl font-bold uppercase mb-4">Mejor Jugador (Puntos)</h2>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-muted-foreground text-sm">
+                  {IS_PRESEASON ? "El torneo aún no ha comenzado" : !topPoints || topPoints.length === 0 ? "Sin datos aún" : ""}
+                </p>
+                {!IS_PRESEASON && topPoints?.map((ps: any, i: number) => (
+                  <div key={ps.player_id} className="flex items-center justify-between py-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground text-sm w-5">{i + 1}.</span>
+                      <TeamLogo team={ps.team} size={20} />
+                      <span className="text-sm font-medium">#{ps.player?.jersey_number} {ps.player?.name}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-display font-bold">{ps.points}</span>
+                      <span className="text-muted-foreground text-xs ml-1">({ps.goals}G {ps.assists}A)</span>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div>
             <h2 className="font-display text-2xl font-bold uppercase mb-4">Goleadores</h2>
             <Card>
               <CardContent className="p-4">
@@ -249,7 +273,7 @@ export default function Home() {
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground text-sm w-5">{i + 1}.</span>
                       <TeamLogo team={ps.team} size={20} />
-                      <span className="text-sm font-medium">{ps.player?.name}</span>
+                      <span className="text-sm font-medium">#{ps.player?.jersey_number} {ps.player?.name}</span>
                     </div>
                     <span className="font-display font-bold">{ps.goals}</span>
                   </div>
@@ -270,33 +294,9 @@ export default function Home() {
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground text-sm w-5">{i + 1}.</span>
                       <TeamLogo team={ps.team} size={20} />
-                      <span className="text-sm font-medium">{ps.player?.name}</span>
+                      <span className="text-sm font-medium">#{ps.player?.jersey_number} {ps.player?.name}</span>
                     </div>
                     <span className="font-display font-bold">{ps.assists}</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div>
-            <h2 className="font-display text-2xl font-bold uppercase mb-4">Mejor Jugador (Puntos)</h2>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-muted-foreground text-sm">
-                  {IS_PRESEASON ? "El torneo aún no ha comenzado" : !topPoints || topPoints.length === 0 ? "Sin datos aún" : ""}
-                </p>
-                {!IS_PRESEASON && topPoints?.map((ps: any, i: number) => (
-                  <div key={ps.player_id} className="flex items-center justify-between py-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground text-sm w-5">{i + 1}.</span>
-                      <TeamLogo team={ps.team} size={20} />
-                      <span className="text-sm font-medium">{ps.player?.name}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-display font-bold">{ps.points}</span>
-                      <span className="text-muted-foreground text-xs ml-1">({ps.goals}G {ps.assists}A)</span>
-                    </div>
                   </div>
                 ))}
               </CardContent>
