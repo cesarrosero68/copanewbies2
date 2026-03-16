@@ -103,9 +103,11 @@ export default function Schedule() {
       <div className="space-y-3">
         {matches?.map((match: any) => {
           const isPlayed = match.status === "final" || match.status === "locked";
+          const isLive = match.status === "live";
+          const isClickable = isPlayed || isLive;
           return (
-            <Link key={match.id} to={isPlayed ? `/match/${match.id}` : "#"}>
-              <Card className={`hover:shadow-md transition-shadow ${isPlayed ? "cursor-pointer" : ""}`}>
+            <Link key={match.id} to={isClickable ? `/match/${match.id}` : "#"}>
+              <Card className={`hover:shadow-md transition-shadow ${isClickable ? "cursor-pointer" : ""} ${isLive ? "border-destructive" : ""}`}>
                 <CardContent className="p-4">
                   {/* Desktop layout */}
                   <div className="hidden sm:flex items-center justify-between gap-4">

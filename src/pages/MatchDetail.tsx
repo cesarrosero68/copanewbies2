@@ -141,7 +141,7 @@ export default function MatchDetail() {
       </Card>
 
       {/* Goal Events by Period */}
-      {isPlayed && goalEvents && goalEvents.length > 0 && (
+      {(isPlayed || isLive) && goalEvents && goalEvents.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="font-display text-xl uppercase">Detalle de Goles</CardTitle>
