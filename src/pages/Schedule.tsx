@@ -66,10 +66,24 @@ export default function Schedule() {
     },
   });
 
+  // Realtime subscription for live match updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('schedule-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => {
+        queryClient.invalidateQueries({ queryKey: ["all-matches"] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'goal_events' }, () => {
+        queryClient.invalidateQueries({ queryKey: ["all-matches"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
   return (
     <div className="container py-8 max-w-3xl mx-auto">
       <h1 className="font-display text-4xl font-bold uppercase mb-2">Programación y Resultados</h1>
-      <p className="text-muted-foreground mb-6">Todos los partidos de la temporada</p>
+      <p className="text-muted-foreground mb-6">Todos los partidos de la fase regular</p>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-6">
@@ -82,17 +96,6 @@ export default function Schedule() {
             {teams?.map((t: any) => (
               <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
             ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filtrar por fase" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas las fases</SelectItem>
-            <SelectItem value="regular">Fase Regular</SelectItem>
-            <SelectItem value="playoffs">Playoffs</SelectItem>
           </SelectContent>
         </Select>
       </div>

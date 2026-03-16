@@ -39,6 +39,7 @@ const App = () => (
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/match/:id" element={<AdminMatchManage />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>
