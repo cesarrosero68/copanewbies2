@@ -15,7 +15,7 @@ const TOURNAMENT_ID = "a0000000-0000-0000-0000-000000000001";
 
 const statusLabels: Record<string, string> = {
   scheduled: "Programado",
-  live: "En Vivo",
+  live: "🔴 En Juego",
   final: "Final",
   locked: "Cerrado",
 };
