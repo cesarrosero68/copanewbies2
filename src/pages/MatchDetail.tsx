@@ -82,6 +82,7 @@ export default function MatchDetail() {
   if (!match) return <div className="container py-8 text-center text-muted-foreground">Cargando...</div>;
 
   const isPlayed = match.status === "final" || match.status === "locked";
+  const isLive = match.status === "live";
   const periods = ["1", "2", "3", "OT"];
 
   return (
