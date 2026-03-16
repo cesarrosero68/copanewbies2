@@ -157,7 +157,7 @@ export default function Schedule() {
                         <TeamLogo team={match.home_team} size={36} />
                         <span className="font-medium text-sm truncate">{match.home_team?.name}</span>
                       </div>
-                      {isPlayed ? (
+                      {(isPlayed || isLive) ? (
                         <span className="font-display text-lg font-bold shrink-0">
                           {match.reg_home_score}
                         </span>
@@ -168,7 +168,7 @@ export default function Schedule() {
                         <TeamLogo team={match.away_team} size={36} />
                         <span className="font-medium text-sm truncate">{match.away_team?.name}</span>
                       </div>
-                      {isPlayed ? (
+                      {(isPlayed || isLive) ? (
                         <span className="font-display text-lg font-bold shrink-0">
                           {match.reg_away_score}
                         </span>
