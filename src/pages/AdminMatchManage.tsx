@@ -302,27 +302,76 @@ function MatchActions({ match, updateMatch, queryClient, navigate }: any) {
     updateMatch.mutate({ status: "locked" });
   };
 
+  const resetToScheduled = async () => {
+    const { error } = await supabase.from("matches").update({
+      status: "scheduled",
+      reg_home_score: 0,
+      reg_away_score: 0,
+      winner_team_id: null,
+      ot_winner_team_id: null,
+      so_winner_team_id: null,
+      ot_played: false,
+      so_played: false,
+    }).eq("id", match.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    await supabase.rpc("recalculate_standings", { p_tournament_id: TOURNAMENT_ID });
+    await supabase.rpc("recalculate_player_stats", { p_tournament_id: TOURNAMENT_ID });
+    queryClient.invalidateQueries({ queryKey: ["admin-match", match.id] });
+    queryClient.invalidateQueries({ queryKey: ["admin-matches"] });
+    toast({ title: "Partido restablecido a Programado" });
+  };
+
   return (
     <Card>
-      <CardContent className="p-4 flex flex-wrap gap-3 justify-center">
-        {match.status === "scheduled" && (
-          <Button onClick={startMatch} variant="default" className="bg-destructive hover:bg-destructive/90">
-            🔴 Iniciar Partido (En Juego)
-          </Button>
-        )}
-        {match.status === "live" && (
-          <Button onClick={closeMatch} variant="default">
-            Cerrar Partido (Final)
-          </Button>
-        )}
-        {match.status === "final" && (
-          <Button onClick={lockMatch} variant="outline">
-            🔒 Bloquear Partido
-          </Button>
-        )}
-        {match.status === "locked" && (
-          <p className="text-sm text-muted-foreground">Este partido está bloqueado.</p>
-        )}
+      <CardContent className="p-4 space-y-4">
+        <div className="flex flex-wrap gap-3 justify-center">
+          {match.status === "scheduled" && (
+            <Button onClick={startMatch} variant="default" className="bg-destructive hover:bg-destructive/90">
+              🔴 Iniciar Partido (En Juego)
+            </Button>
+          )}
+          {match.status === "live" && (
+            <Button onClick={closeMatch} variant="default">
+              Cerrar Partido (Final)
+            </Button>
+          )}
+          {match.status === "final" && (
+            <Button onClick={lockMatch} variant="outline">
+              🔒 Bloquear Partido
+            </Button>
+          )}
+          {match.status === "locked" && (
+            <p className="text-sm text-muted-foreground">Este partido está bloqueado.</p>
+          )}
+        </div>
+
+        {/* Dev/testing: reset to any status */}
+        <div className="border-t pt-4 flex flex-wrap items-center gap-3 justify-center">
+          <span className="text-xs text-muted-foreground">Cambiar estado (pruebas):</span>
+          {match.status !== "scheduled" && (
+            <Button size="sm" variant="outline" onClick={resetToScheduled}>
+              ↩ Programado
+            </Button>
+          )}
+          {match.status !== "live" && (
+            <Button size="sm" variant="outline" onClick={startMatch}>
+              🔴 En Juego
+            </Button>
+          )}
+          {match.status !== "final" && (
+            <Button size="sm" variant="outline" onClick={() => updateMatch.mutate({ status: "final" })}>
+              Final
+            </Button>
+          )}
+          {match.status !== "locked" && (
+            <Button size="sm" variant="outline" onClick={lockMatch}>
+              🔒 Cerrado
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
