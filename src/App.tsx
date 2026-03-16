@@ -13,6 +13,7 @@ import MatchDetail from "./pages/MatchDetail";
 import TeamDetail from "./pages/TeamDetail";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminMatchManage from "./pages/AdminMatchManage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/match/:id" element={<AdminMatchManage />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

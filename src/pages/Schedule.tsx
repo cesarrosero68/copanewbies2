@@ -6,15 +6,16 @@ import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toBogotaDate } from "@/lib/dateUtils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TeamLogo from "@/components/TeamLogo";
+import { useQueryClient } from "@tanstack/react-query";
 
 const TOURNAMENT_ID = "a0000000-0000-0000-0000-000000000001";
 
 const statusLabels: Record<string, string> = {
   scheduled: "Programado",
-  live: "En Vivo",
+  live: "🔴 En Juego",
   final: "Final",
   locked: "Cerrado",
 };
@@ -28,7 +29,7 @@ const statusColors: Record<string, string> = {
 
 export default function Schedule() {
   const [teamFilter, setTeamFilter] = useState("all");
-  const [phaseFilter, setPhaseFilter] = useState("all");
+  const queryClient = useQueryClient();
 
   const { data: teams } = useQuery({
     queryKey: ["teams"],
@@ -43,19 +44,14 @@ export default function Schedule() {
   });
 
   const { data: matches } = useQuery({
-    queryKey: ["all-matches", teamFilter, phaseFilter],
+    queryKey: ["all-matches", teamFilter],
     queryFn: async () => {
       let query = supabase
         .from("matches")
         .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
         .eq("tournament_id", TOURNAMENT_ID)
+        .eq("stage", "REGULAR")
         .order("match_number", { ascending: true });
-
-      if (phaseFilter === "regular") {
-        query = query.eq("stage", "REGULAR");
-      } else if (phaseFilter === "playoffs") {
-        query = query.neq("stage", "REGULAR");
-      }
 
       const { data } = await query;
       let result = data || [];
@@ -70,10 +66,24 @@ export default function Schedule() {
     },
   });
 
+  // Realtime subscription for live match updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('schedule-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches' }, () => {
+        queryClient.invalidateQueries({ queryKey: ["all-matches"] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'goal_events' }, () => {
+        queryClient.invalidateQueries({ queryKey: ["all-matches"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
+
   return (
     <div className="container py-8 max-w-3xl mx-auto">
       <h1 className="font-display text-4xl font-bold uppercase mb-2">Programación y Resultados</h1>
-      <p className="text-muted-foreground mb-6">Todos los partidos de la temporada</p>
+      <p className="text-muted-foreground mb-6">Todos los partidos de la fase regular</p>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-4 mb-6">
@@ -88,25 +98,16 @@ export default function Schedule() {
             ))}
           </SelectContent>
         </Select>
-
-        <Select value={phaseFilter} onValueChange={setPhaseFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filtrar por fase" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas las fases</SelectItem>
-            <SelectItem value="regular">Fase Regular</SelectItem>
-            <SelectItem value="playoffs">Playoffs</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       <div className="space-y-3">
         {matches?.map((match: any) => {
           const isPlayed = match.status === "final" || match.status === "locked";
+          const isLive = match.status === "live";
+          const isClickable = isPlayed || isLive;
           return (
-            <Link key={match.id} to={isPlayed ? `/match/${match.id}` : "#"}>
-              <Card className={`hover:shadow-md transition-shadow ${isPlayed ? "cursor-pointer" : ""}`}>
+            <Link key={match.id} to={isClickable ? `/match/${match.id}` : "#"}>
+              <Card className={`hover:shadow-md transition-shadow ${isClickable ? "cursor-pointer" : ""} ${isLive ? "border-destructive" : ""}`}>
                 <CardContent className="p-4">
                   {/* Desktop layout */}
                   <div className="hidden sm:flex items-center justify-between gap-4">
@@ -119,7 +120,7 @@ export default function Schedule() {
                       <span className="font-medium text-sm truncate">{match.home_team?.name}</span>
                     </div>
 
-                    {isPlayed ? (
+                    {(isPlayed || isLive) ? (
                       <div className="font-display text-xl font-bold px-3 shrink-0">
                         {match.reg_home_score} - {match.reg_away_score}
                       </div>
@@ -156,7 +157,7 @@ export default function Schedule() {
                         <TeamLogo team={match.home_team} size={36} />
                         <span className="font-medium text-sm truncate">{match.home_team?.name}</span>
                       </div>
-                      {isPlayed ? (
+                      {(isPlayed || isLive) ? (
                         <span className="font-display text-lg font-bold shrink-0">
                           {match.reg_home_score}
                         </span>
@@ -167,7 +168,7 @@ export default function Schedule() {
                         <TeamLogo team={match.away_team} size={36} />
                         <span className="font-medium text-sm truncate">{match.away_team?.name}</span>
                       </div>
-                      {isPlayed ? (
+                      {(isPlayed || isLive) ? (
                         <span className="font-display text-lg font-bold shrink-0">
                           {match.reg_away_score}
                         </span>

@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,7 @@ const teamColorMap: Record<string, string> = {
 
 export default function MatchDetail() {
   const { id } = useParams();
+  const queryClient = useQueryClient();
 
   const { data: match } = useQuery({
     queryKey: ["match", id],
@@ -59,9 +61,28 @@ export default function MatchDetail() {
     enabled: !!id,
   });
 
+  // Realtime subscriptions for live updates
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`match-detail-${id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: `id=eq.${id}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["match", id] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'goal_events', filter: `match_id=eq.${id}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["match-goals", id] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'penalty_events', filter: `match_id=eq.${id}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["match-penalties", id] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id, queryClient]);
+
   if (!match) return <div className="container py-8 text-center text-muted-foreground">Cargando...</div>;
 
   const isPlayed = match.status === "final" || match.status === "locked";
+  const isLive = match.status === "live";
   const periods = ["1", "2", "3", "OT"];
 
   return (
@@ -70,9 +91,16 @@ export default function MatchDetail() {
       <Card className="mb-8">
         <CardContent className="p-8">
           <div className="text-center mb-4">
-            <Badge variant="secondary" className="text-xs">
-              {match.stage === "REGULAR" ? `Partido #${match.match_number}` : match.stage}
-            </Badge>
+            <div className="flex items-center justify-center gap-2">
+              <Badge variant="secondary" className="text-xs">
+                {match.stage === "REGULAR" ? `Partido #${match.match_number}` : match.stage}
+              </Badge>
+              {isLive && (
+                <Badge variant="destructive" className="text-xs animate-pulse">
+                  🔴 En Juego
+                </Badge>
+              )}
+            </div>
             {match.start_time && (
               <p className="text-sm text-muted-foreground mt-1">
                 {format(toBogotaDate(match.start_time), "EEEE d MMMM yyyy • HH:mm", { locale: es })}
@@ -86,7 +114,7 @@ export default function MatchDetail() {
               <h2 className="font-display text-xl font-bold">{match.home_team?.name}</h2>
             </div>
 
-            {isPlayed ? (
+            {(isPlayed || isLive) ? (
               <div className="font-display text-5xl font-bold">
                 {match.reg_home_score} <span className="text-muted-foreground text-3xl">-</span> {match.reg_away_score}
               </div>
@@ -113,7 +141,7 @@ export default function MatchDetail() {
       </Card>
 
       {/* Goal Events by Period */}
-      {isPlayed && goalEvents && goalEvents.length > 0 && (
+      {(isPlayed || isLive) && goalEvents && goalEvents.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="font-display text-xl uppercase">Detalle de Goles</CardTitle>
@@ -158,7 +186,7 @@ export default function MatchDetail() {
       )}
 
       {/* Penalty Events by Period */}
-      {isPlayed && penaltyEvents && penaltyEvents.length > 0 && (
+      {(isPlayed || isLive) && penaltyEvents && penaltyEvents.length > 0 && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="font-display text-xl uppercase">Detalle de Sanciones</CardTitle>
