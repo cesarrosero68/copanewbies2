@@ -29,7 +29,7 @@ const statusColors: Record<string, string> = {
 
 export default function Schedule() {
   const [teamFilter, setTeamFilter] = useState("all");
-  const [phaseFilter, setPhaseFilter] = useState("all");
+  const queryClient = useQueryClient();
 
   const { data: teams } = useQuery({
     queryKey: ["teams"],
