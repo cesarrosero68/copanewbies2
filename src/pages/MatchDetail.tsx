@@ -91,9 +91,16 @@ export default function MatchDetail() {
       <Card className="mb-8">
         <CardContent className="p-8">
           <div className="text-center mb-4">
-            <Badge variant="secondary" className="text-xs">
-              {match.stage === "REGULAR" ? `Partido #${match.match_number}` : match.stage}
-            </Badge>
+            <div className="flex items-center justify-center gap-2">
+              <Badge variant="secondary" className="text-xs">
+                {match.stage === "REGULAR" ? `Partido #${match.match_number}` : match.stage}
+              </Badge>
+              {isLive && (
+                <Badge variant="destructive" className="text-xs animate-pulse">
+                  🔴 En Juego
+                </Badge>
+              )}
+            </div>
             {match.start_time && (
               <p className="text-sm text-muted-foreground mt-1">
                 {format(toBogotaDate(match.start_time), "EEEE d MMMM yyyy • HH:mm", { locale: es })}
@@ -107,7 +114,7 @@ export default function MatchDetail() {
               <h2 className="font-display text-xl font-bold">{match.home_team?.name}</h2>
             </div>
 
-            {isPlayed ? (
+            {(isPlayed || isLive) ? (
               <div className="font-display text-5xl font-bold">
                 {match.reg_home_score} <span className="text-muted-foreground text-3xl">-</span> {match.reg_away_score}
               </div>
