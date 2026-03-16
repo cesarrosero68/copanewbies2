@@ -186,7 +186,7 @@ export default function MatchDetail() {
       )}
 
       {/* Penalty Events by Period */}
-      {isPlayed && penaltyEvents && penaltyEvents.length > 0 && (
+      {(isPlayed || isLive) && penaltyEvents && penaltyEvents.length > 0 && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="font-display text-xl uppercase">Detalle de Sanciones</CardTitle>
