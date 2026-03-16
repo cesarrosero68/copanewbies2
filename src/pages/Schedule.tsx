@@ -49,13 +49,8 @@ export default function Schedule() {
         .from("matches")
         .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
         .eq("tournament_id", TOURNAMENT_ID)
+        .eq("stage", "REGULAR")
         .order("match_number", { ascending: true });
-
-      if (phaseFilter === "regular") {
-        query = query.eq("stage", "REGULAR");
-      } else if (phaseFilter === "playoffs") {
-        query = query.neq("stage", "REGULAR");
-      }
 
       const { data } = await query;
       let result = data || [];
