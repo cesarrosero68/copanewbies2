@@ -61,6 +61,24 @@ export default function MatchDetail() {
     enabled: !!id,
   });
 
+  // Realtime subscriptions for live updates
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`match-detail-${id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: `id=eq.${id}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["match", id] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'goal_events', filter: `match_id=eq.${id}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["match-goals", id] });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'penalty_events', filter: `match_id=eq.${id}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["match-penalties", id] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id, queryClient]);
+
   if (!match) return <div className="container py-8 text-center text-muted-foreground">Cargando...</div>;
 
   const isPlayed = match.status === "final" || match.status === "locked";
