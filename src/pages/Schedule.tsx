@@ -44,7 +44,7 @@ export default function Schedule() {
   });
 
   const { data: matches } = useQuery({
-    queryKey: ["all-matches", teamFilter, phaseFilter],
+    queryKey: ["all-matches", teamFilter],
     queryFn: async () => {
       let query = supabase
         .from("matches")
