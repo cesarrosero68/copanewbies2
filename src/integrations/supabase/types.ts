@@ -346,6 +346,135 @@ export type Database = {
           },
         ]
       }
+      skills_players: {
+        Row: {
+          club: string
+          consecutive_number: number
+          created_at: string
+          full_name: string
+          id: string
+          is_active: boolean
+          role: Database["public"]["Enums"]["skills_role"]
+        }
+        Insert: {
+          club: string
+          consecutive_number: number
+          created_at?: string
+          full_name: string
+          id?: string
+          is_active?: boolean
+          role?: Database["public"]["Enums"]["skills_role"]
+        }
+        Update: {
+          club?: string
+          consecutive_number?: number
+          created_at?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          role?: Database["public"]["Enums"]["skills_role"]
+        }
+        Relationships: []
+      }
+      skills_point_tables: {
+        Row: {
+          config: Json
+          id: string
+          table_name: string
+        }
+        Insert: {
+          config?: Json
+          id?: string
+          table_name: string
+        }
+        Update: {
+          config?: Json
+          id?: string
+          table_name?: string
+        }
+        Relationships: []
+      }
+      skills_results: {
+        Row: {
+          attempt_number: number | null
+          created_at: string
+          entered_by: string | null
+          id: string
+          player_id: string
+          score_direct: number | null
+          shootout_result: string | null
+          sniper_target: string | null
+          test_number: number
+          time_milliseconds: number | null
+          time_minutes: number | null
+          time_seconds: number | null
+        }
+        Insert: {
+          attempt_number?: number | null
+          created_at?: string
+          entered_by?: string | null
+          id?: string
+          player_id: string
+          score_direct?: number | null
+          shootout_result?: string | null
+          sniper_target?: string | null
+          test_number: number
+          time_milliseconds?: number | null
+          time_minutes?: number | null
+          time_seconds?: number | null
+        }
+        Update: {
+          attempt_number?: number | null
+          created_at?: string
+          entered_by?: string | null
+          id?: string
+          player_id?: string
+          score_direct?: number | null
+          shootout_result?: string | null
+          sniper_target?: string | null
+          test_number?: number
+          time_milliseconds?: number | null
+          time_minutes?: number | null
+          time_seconds?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skills_results_entered_by_fkey"
+            columns: ["entered_by"]
+            isOneToOne: false
+            referencedRelation: "skills_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skills_results_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "skills_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skills_users: {
+        Row: {
+          created_at: string
+          id: string
+          password_hash: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          password_hash: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          password_hash?: string
+          username?: string
+        }
+        Relationships: []
+      }
       standings_aggregate: {
         Row: {
           draws: number
@@ -547,12 +676,20 @@ export type Database = {
         Args: { p_tournament_id: string }
         Returns: undefined
       }
+      verify_skills_login: {
+        Args: { p_password: string; p_username: string }
+        Returns: {
+          user_id: string
+          user_name: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
       goal_period: "1" | "2" | "3" | "OT"
       match_stage: "REGULAR" | "P1A" | "P1B" | "SEMI" | "P2" | "FINAL" | "THIRD"
       match_status: "scheduled" | "live" | "final" | "locked"
+      skills_role: "field" | "goalkeeper"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -684,6 +821,7 @@ export const Constants = {
       goal_period: ["1", "2", "3", "OT"],
       match_stage: ["REGULAR", "P1A", "P1B", "SEMI", "P2", "FINAL", "THIRD"],
       match_status: ["scheduled", "live", "final", "locked"],
+      skills_role: ["field", "goalkeeper"],
     },
   },
 } as const
