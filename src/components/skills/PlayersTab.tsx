@@ -50,10 +50,10 @@ export default function PlayersTab({ players, onRefresh }: Props) {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows: any[] = XLSX.utils.sheet_to_json(ws);
       const toInsert = rows.map(r => ({
-        consecutive_number: parseInt(r['numero'] || r['consecutive_number'] || r['#'] || '0'),
-        full_name: r['nombre'] || r['full_name'] || r['name'] || '',
-        club: r['club'] || r['equipo'] || '',
-        role: (r['rol'] || r['role'] || 'field').toLowerCase().includes('goal') ? 'goalkeeper' : 'field',
+        consecutive_number: parseInt(r['#'] || r['numero'] || r['consecutive_number'] || '0'),
+        full_name: r['Nombre completo'] || r['nombre'] || r['full_name'] || r['name'] || '',
+        club: r['Club'] || r['club'] || r['equipo'] || '',
+        role: (r['Rol'] || r['rol'] || r['role'] || 'field').toLowerCase().includes('goal') ? 'goalkeeper' : 'field',
       })).filter(r => r.full_name);
       if (toInsert.length === 0) { toast({ title: "Sin datos", variant: "destructive" }); return; }
       const { error } = await supabase.from('skills_players' as any).insert(toInsert);
