@@ -14,6 +14,9 @@ import TeamDetail from "./pages/TeamDetail";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminMatchManage from "./pages/AdminMatchManage";
+import Skills from "./pages/Skills";
+import SkillsLogin from "./pages/SkillsLogin";
+import SkillsStaff from "./pages/SkillsStaff";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
