@@ -9,7 +9,8 @@ const navLinks = [
 { to: "/schedule", label: "Programación" },
 { to: "/standings", label: "Posiciones" },
 { to: "/players", label: "Jugadores" },
-{ to: "/playoffs", label: "Playoffs" }];
+{ to: "/playoffs", label: "Playoffs" },
+{ to: "/skills", label: "Skills" }];
 
 
 export default function PublicLayout() {

@@ -44,6 +44,13 @@ const App = () => (
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/match/:id" element={<AdminMatchManage />} />
 
+          {/* Skills routes */}
+          <Route element={<PublicLayout />}>
+            <Route path="/skills" element={<Skills />} />
+          </Route>
+          <Route path="/skills/login" element={<SkillsLogin />} />
+          <Route path="/skills/staff" element={<SkillsStaff />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
