@@ -63,15 +63,15 @@ export default function SkillsStaff() {
       <div className="container py-4">
         <Tabs defaultValue="players">
           <TabsList className="flex flex-wrap h-auto gap-1">
-            <TabsTrigger value="players">Jugadores</TabsTrigger>
-            <TabsTrigger value="test1">Test 1</TabsTrigger>
-            <TabsTrigger value="test2">Test 2</TabsTrigger>
-            <TabsTrigger value="test3">Test 3</TabsTrigger>
-            <TabsTrigger value="test4">Test 4</TabsTrigger>
-            <TabsTrigger value="test5">Test 5</TabsTrigger>
-            <TabsTrigger value="test6">Test 6</TabsTrigger>
-            <TabsTrigger value="test7">Test 7</TabsTrigger>
-          </TabsList>
+  <TabsTrigger value="players">Jugadores</TabsTrigger>
+  <TabsTrigger value="test1">T1 - Fastest Lap</TabsTrigger>
+  <TabsTrigger value="test2">T2 - Fastest Circuit</TabsTrigger>
+  <TabsTrigger value="test3">T3 - Target Sniper</TabsTrigger>
+  <TabsTrigger value="test4">T4 - Goal Sniper</TabsTrigger>
+  <TabsTrigger value="test5">T5 - Penalty Shot</TabsTrigger>
+  <TabsTrigger value="test6">T6 - Penalty Save</TabsTrigger>
+  <TabsTrigger value="test7">T7 - Goalie Equipment</TabsTrigger>
+</TabsList>
 
           <TabsContent value="players">
             <PlayersTab players={players} onRefresh={fetchData} />
