@@ -204,7 +204,7 @@ export default function Skills() {
     );
   };
 
-  const testNames = ['', 'Fastest Lap', 'Fastest Circuit', 'Sniper', 'Puntería', 'Shootouts (J)', 'Shootouts (GK)', 'Equipment Challenge'];
+  const testNames = ['', 'T1 - Fastest Lap', 'T2 - Fastest Circuit', 'T3 - Target Sniper', 'T4 - Goal Sniper', 'T5 - Penalty Shot', 'T6 - Penalty Save', 'T7 - Goalie Equipment'];
 
   return (
     <div className="container py-6 space-y-6">
@@ -260,7 +260,7 @@ export default function Skills() {
           <Tabs defaultValue="t1">
             <TabsList className="flex flex-wrap h-auto gap-1">
               {[1, 2, 3, 4, 5, 6, 7].map(n => (
-                <TabsTrigger key={n} value={`t${n}`}>T{n}</TabsTrigger>
+                <TabsTrigger key={n} value={`t${n}`}>{testNames[n]}</TabsTrigger>
               ))}
             </TabsList>
             {[1, 2, 3, 4, 5, 6, 7].map(n => (
