@@ -33,6 +33,13 @@ export default function TimedTestTab({ testNumber, title, players, results, onRe
 
   const playerResults = (playerId: string) => testResults.filter(r => r.player_id === playerId);
 
+  // Get distinct attempt numbers recorded for a player
+  const distinctAttempts = (playerId: string) => {
+    const pr = playerResults(playerId);
+    const attempts = new Set(pr.map(r => r.attempt_number));
+    return attempts;
+  };
+
   const bestTime = (playerId: string) => {
     const pr = playerResults(playerId);
     if (pr.length === 0) return null;
@@ -43,9 +50,13 @@ export default function TimedTestTab({ testNumber, title, players, results, onRe
   };
 
   const nextAttempt = (playerId: string) => {
-    const pr = playerResults(playerId);
-    if (pr.length >= maxAttempts) return null;
-    return pr.length + 1;
+    const attempts = distinctAttempts(playerId);
+    if (attempts.size >= maxAttempts) return null;
+    // Find next available attempt number
+    for (let i = 1; i <= maxAttempts; i++) {
+      if (!attempts.has(i)) return i;
+    }
+    return null;
   };
 
   const handleSave = async () => {
