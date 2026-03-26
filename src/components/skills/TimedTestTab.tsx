@@ -158,7 +158,7 @@ export default function TimedTestTab({ testNumber, title, players, results, onRe
                   );
                 })}
                 <TableCell className="font-bold">{bt !== null && bt !== Infinity ? formatMs(bt) : '—'}</TableCell>
-                <TableCell>{pr.length >= maxAttempts && <Check className="w-4 h-4 text-green-600" />}</TableCell>
+                <TableCell>{new Set(pr.map(r => r.attempt_number)).size >= maxAttempts && <Check className="w-4 h-4 text-green-600" />}</TableCell>
               </TableRow>
             );
           })}
