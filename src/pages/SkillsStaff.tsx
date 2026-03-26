@@ -32,6 +32,12 @@ export default function SkillsStaff() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Auto-refresh every 10 seconds to pick up changes from other staff users
+  useEffect(() => {
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
   const handleLogout = () => { clearStaffSession(); navigate("/skills/login"); };
 
   if (!staff) return null;
