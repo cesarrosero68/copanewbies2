@@ -124,46 +124,60 @@ export default function TimedTestTab({ testNumber, title, players, results, onRe
         <div className="flex items-end"><Button onClick={handleSave}>OK</Button></div>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>#</TableHead>
-            <TableHead>Jugador</TableHead>
-            {Array.from({ length: maxAttempts }, (_, i) => <TableHead key={i}>Int. {i + 1}</TableHead>)}
-            <TableHead>Mejor</TableHead>
-            <TableHead></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredPlayers.map(p => {
-            const pr = playerResults(p.id);
-            const bt = bestTime(p.id);
-            return (
-              <TableRow key={p.id}>
-                <TableCell>{p.consecutive_number}</TableCell>
-                <TableCell className="font-medium">{p.full_name}</TableCell>
-                {Array.from({ length: maxAttempts }, (_, i) => {
-                  const r = pr.find(r => r.attempt_number === i + 1);
-                  return (
-                    <TableCell key={i}>
-                      {r ? (
-                        <span className="flex items-center gap-1">
-                          {formatTime(r)}
-                          <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDelete(r.id)}>
-                            <Trash2 className="w-3 h-3 text-destructive" />
-                          </Button>
-                        </span>
-                      ) : '—'}
-                    </TableCell>
-                  );
-                })}
-                <TableCell className="font-bold">{bt !== null && bt !== Infinity ? formatMs(bt) : '—'}</TableCell>
-                <TableCell>{new Set(pr.map(r => r.attempt_number)).size >= maxAttempts && <Check className="w-4 h-4 text-green-600" />}</TableCell>
+      {(() => {
+        // Compute rankings: sorted by best time (lower is better), only players with results
+        const ranked = filteredPlayers
+          .map(p => ({ player: p, best: bestTime(p.id) }))
+          .filter(x => x.best !== null && x.best !== Infinity)
+          .sort((a, b) => a.best! - b.best!);
+        const rankMap: Record<string, number> = {};
+        ranked.forEach((x, i) => { rankMap[x.player.id] = i + 1; });
+
+        return (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead>Jugador</TableHead>
+                {Array.from({ length: maxAttempts }, (_, i) => <TableHead key={i}>Int. {i + 1}</TableHead>)}
+                <TableHead>Mejor</TableHead>
+                <TableHead></TableHead>
+                <TableHead>Pos.</TableHead>
               </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+            </TableHeader>
+            <TableBody>
+              {filteredPlayers.map(p => {
+                const pr = playerResults(p.id);
+                const bt = bestTime(p.id);
+                return (
+                  <TableRow key={p.id}>
+                    <TableCell>{p.consecutive_number}</TableCell>
+                    <TableCell className="font-medium">{p.full_name}</TableCell>
+                    {Array.from({ length: maxAttempts }, (_, i) => {
+                      const r = pr.find(r => r.attempt_number === i + 1);
+                      return (
+                        <TableCell key={i}>
+                          {r ? (
+                            <span className="flex items-center gap-1">
+                              {formatTime(r)}
+                              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleDelete(r.id)}>
+                                <Trash2 className="w-3 h-3 text-destructive" />
+                              </Button>
+                            </span>
+                          ) : '—'}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="font-bold">{bt !== null && bt !== Infinity ? formatMs(bt) : '—'}</TableCell>
+                    <TableCell>{new Set(pr.map(r => r.attempt_number)).size >= maxAttempts && <Check className="w-4 h-4 text-green-600" />}</TableCell>
+                    <TableCell className="font-bold text-primary">{rankMap[p.id] || '—'}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        );
+      })()}
     </div>
   );
 }

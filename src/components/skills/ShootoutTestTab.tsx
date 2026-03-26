@@ -90,43 +90,56 @@ export default function ShootoutTestTab({ testNumber, title, players, results, o
         )}
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>#</TableHead>
-            <TableHead>Jugador</TableHead>
-            {Array.from({ length: maxShootouts }, (_, i) => <TableHead key={i}>S{i + 1}</TableHead>)}
-            <TableHead>Total</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {activePlayers.map(p => {
-            const shots = playerShootouts(p.id);
-            return (
-              <TableRow key={p.id}>
-                <TableCell>{p.consecutive_number}</TableCell>
-                <TableCell className="font-medium">{p.full_name}</TableCell>
-                {Array.from({ length: maxShootouts }, (_, i) => {
-                  const s = shots.find(r => r.attempt_number === i + 1);
-                  return (
-                    <TableCell key={i}>
-                      {s ? (
-                        <span className="flex items-center gap-1">
-                          {s.score_direct}
-                          <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => handleDelete(s.id)}>
-                            <Trash2 className="w-3 h-3 text-destructive" />
-                          </Button>
-                        </span>
-                      ) : '—'}
-                    </TableCell>
-                  );
-                })}
-                <TableCell className="font-bold">{playerTotal(p.id)}</TableCell>
+      {(() => {
+        const ranked = activePlayers
+          .map(p => ({ player: p, total: playerTotal(p.id), hasResults: playerShootouts(p.id).length > 0 }))
+          .filter(x => x.hasResults)
+          .sort((a, b) => b.total - a.total);
+        const rankMap: Record<string, number> = {};
+        ranked.forEach((x, i) => { rankMap[x.player.id] = i + 1; });
+
+        return (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead>Jugador</TableHead>
+                {Array.from({ length: maxShootouts }, (_, i) => <TableHead key={i}>S{i + 1}</TableHead>)}
+                <TableHead>Total</TableHead>
+                <TableHead>Pos.</TableHead>
               </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+            </TableHeader>
+            <TableBody>
+              {activePlayers.map(p => {
+                const shots = playerShootouts(p.id);
+                return (
+                  <TableRow key={p.id}>
+                    <TableCell>{p.consecutive_number}</TableCell>
+                    <TableCell className="font-medium">{p.full_name}</TableCell>
+                    {Array.from({ length: maxShootouts }, (_, i) => {
+                      const s = shots.find(r => r.attempt_number === i + 1);
+                      return (
+                        <TableCell key={i}>
+                          {s ? (
+                            <span className="flex items-center gap-1">
+                              {s.score_direct}
+                              <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => handleDelete(s.id)}>
+                                <Trash2 className="w-3 h-3 text-destructive" />
+                              </Button>
+                            </span>
+                          ) : '—'}
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell className="font-bold">{playerTotal(p.id)}</TableCell>
+                    <TableCell className="font-bold text-primary">{rankMap[p.id] || '—'}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        );
+      })()}
     </div>
   );
 }

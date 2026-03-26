@@ -77,33 +77,46 @@ export default function AccuracyTestTab({ players, results, onRefresh }: Props) 
         )}
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>#</TableHead>
-            <TableHead>Jugador</TableHead>
-            <TableHead>Rol</TableHead>
-            <TableHead>Resultado</TableHead>
-            <TableHead>Pts</TableHead>
-            <TableHead></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {activePlayers.map(p => {
-            const r = playerResult(p.id);
-            return (
-              <TableRow key={p.id}>
-                <TableCell>{p.consecutive_number}</TableCell>
-                <TableCell className="font-medium">{p.full_name}</TableCell>
-                <TableCell>{p.role === 'goalkeeper' ? 'GK' : 'J'}</TableCell>
-                <TableCell>{r ? ACCURACY_OPTIONS.find(o => o.key === r.sniper_target)?.label || '—' : '—'}</TableCell>
-                <TableCell className="font-bold">{r ? r.score_direct : '—'}</TableCell>
-                <TableCell>{r && <Button size="icon" variant="ghost" onClick={() => handleDelete(r.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}</TableCell>
+      {(() => {
+        const ranked = activePlayers
+          .map(p => ({ player: p, score: playerResult(p.id)?.score_direct ?? null }))
+          .filter(x => x.score !== null)
+          .sort((a, b) => (b.score as number) - (a.score as number));
+        const rankMap: Record<string, number> = {};
+        ranked.forEach((x, i) => { rankMap[x.player.id] = i + 1; });
+
+        return (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>#</TableHead>
+                <TableHead>Jugador</TableHead>
+                <TableHead>Rol</TableHead>
+                <TableHead>Resultado</TableHead>
+                <TableHead>Pts</TableHead>
+                <TableHead></TableHead>
+                <TableHead>Pos.</TableHead>
               </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+            </TableHeader>
+            <TableBody>
+              {activePlayers.map(p => {
+                const r = playerResult(p.id);
+                return (
+                  <TableRow key={p.id}>
+                    <TableCell>{p.consecutive_number}</TableCell>
+                    <TableCell className="font-medium">{p.full_name}</TableCell>
+                    <TableCell>{p.role === 'goalkeeper' ? 'GK' : 'J'}</TableCell>
+                    <TableCell>{r ? ACCURACY_OPTIONS.find(o => o.key === r.sniper_target)?.label || '—' : '—'}</TableCell>
+                    <TableCell className="font-bold">{r ? r.score_direct : '—'}</TableCell>
+                    <TableCell>{r && <Button size="icon" variant="ghost" onClick={() => handleDelete(r.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>}</TableCell>
+                    <TableCell className="font-bold text-primary">{rankMap[p.id] || '—'}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        );
+      })()}
     </div>
   );
 }
