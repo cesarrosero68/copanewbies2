@@ -22,7 +22,9 @@ export function useSkillsCompetitionData({ activeOnly = false }: UseSkillsCompet
 
   const refresh = useCallback(async () => {
     let playersQuery = supabase.from("skills_players" as any).select("*").order("consecutive_number");
-    if (activeOnly) playersQuery = playersQuery.eq("is_active", true);
+    if (activeOnly) {
+      playersQuery = playersQuery.eq("is_active", true);
+    }
 
     const [playersResponse, resultsResponse, pointTablesResponse] = await Promise.all([
       playersQuery,
@@ -30,10 +32,16 @@ export function useSkillsCompetitionData({ activeOnly = false }: UseSkillsCompet
       supabase.from("skills_point_tables" as any).select("*"),
     ]);
 
-    if (playersResponse.data) setPlayers(playersResponse.data as SkillsPlayer[]);
-    if (resultsResponse.data) setResults(resultsResponse.data as SkillsResult[]);
+    if (playersResponse.data) {
+      setPlayers(playersResponse.data as unknown as SkillsPlayer[]);
+    }
+
+    if (resultsResponse.data) {
+      setResults(resultsResponse.data as unknown as SkillsResult[]);
+    }
+
     if (pointTablesResponse.data) {
-      setPointScales(extractSkillsPointScales(pointTablesResponse.data as SkillsPointTable[]));
+      setPointScales(extractSkillsPointScales(pointTablesResponse.data as unknown as SkillsPointTable[]));
     }
   }, [activeOnly]);
 
