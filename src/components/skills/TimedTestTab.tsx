@@ -125,13 +125,17 @@ export default function TimedTestTab({ testNumber, title, players, results, onRe
       </div>
 
       {(() => {
-        // Compute rankings: sorted by best time (lower is better), only players with results
+        const POINTS_SCALE = [10, 8, 6, 5, 4, 3, 2, 1];
         const ranked = filteredPlayers
           .map(p => ({ player: p, best: bestTime(p.id) }))
           .filter(x => x.best !== null && x.best !== Infinity)
           .sort((a, b) => a.best! - b.best!);
         const rankMap: Record<string, number> = {};
-        ranked.forEach((x, i) => { rankMap[x.player.id] = i + 1; });
+        const ptsMap: Record<string, number> = {};
+        ranked.forEach((x, i) => {
+          rankMap[x.player.id] = i + 1;
+          ptsMap[x.player.id] = POINTS_SCALE[i % POINTS_SCALE.length];
+        });
 
         return (
           <Table>
@@ -143,6 +147,7 @@ export default function TimedTestTab({ testNumber, title, players, results, onRe
                 <TableHead>Mejor</TableHead>
                 <TableHead></TableHead>
                 <TableHead>Pos.</TableHead>
+                <TableHead>Pts</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -171,6 +176,7 @@ export default function TimedTestTab({ testNumber, title, players, results, onRe
                     <TableCell className="font-bold">{bt !== null && bt !== Infinity ? formatMs(bt) : '—'}</TableCell>
                     <TableCell>{new Set(pr.map(r => r.attempt_number)).size >= maxAttempts && <Check className="w-4 h-4 text-green-600" />}</TableCell>
                     <TableCell className="font-bold text-primary">{rankMap[p.id] || '—'}</TableCell>
+                    <TableCell className="font-bold text-accent-foreground">{ptsMap[p.id] ?? '—'}</TableCell>
                   </TableRow>
                 );
               })}
