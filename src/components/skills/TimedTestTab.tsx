@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,25 @@ export default function TimedTestTab({ testNumber, title, players, results, onRe
   const [milliseconds, setMilliseconds] = useState("");
   const [minutes, setMinutes] = useState("");
   const [filter, setFilter] = useState<'field' | 'goalkeeper'>(roleFilter === 'all' ? 'field' : roleFilter);
+  const [fieldPointsScale, setFieldPointsScale] = useState<number[]>([10, 8, 6, 5, 4, 3, 2, 1]);
+  const [gkPointsScale, setGkPointsScale] = useState<number[]>([10, 8, 6, 5, 4, 3, 2, 1]);
+
+  useEffect(() => {
+    const fetchPointTables = async () => {
+      const { data } = await supabase.from('skills_point_tables' as any).select('*');
+      if (data) {
+        const fieldTable = (data as any[]).find((t: any) => t.table_name === 'field_ranking_group');
+        const gkTable = (data as any[]).find((t: any) => t.table_name === 'goalkeeper_ranking');
+        if (fieldTable?.config && Array.isArray(fieldTable.config)) {
+          setFieldPointsScale(fieldTable.config);
+        }
+        if (gkTable?.config && Array.isArray(gkTable.config)) {
+          setGkPointsScale(gkTable.config.map((e: any) => e.points));
+        }
+      }
+    };
+    fetchPointTables();
+  }, []);
 
   const filteredPlayers = players.filter(p => p.is_active && (roleFilter === 'all' ? p.role === filter : p.role === roleFilter));
   const testResults = results.filter(r => r.test_number === testNumber);
@@ -125,7 +144,7 @@ export default function TimedTestTab({ testNumber, title, players, results, onRe
       </div>
 
       {(() => {
-        const POINTS_SCALE = [10, 8, 6, 5, 4, 3, 2, 1];
+        const currentScale = (roleFilter === 'goalkeeper' || (roleFilter === 'all' && filter === 'goalkeeper')) ? gkPointsScale : fieldPointsScale;
         const ranked = filteredPlayers
           .map(p => ({ player: p, best: bestTime(p.id) }))
           .filter(x => x.best !== null && x.best !== Infinity)
@@ -134,7 +153,7 @@ export default function TimedTestTab({ testNumber, title, players, results, onRe
         const ptsMap: Record<string, number> = {};
         ranked.forEach((x, i) => {
           rankMap[x.player.id] = i + 1;
-          ptsMap[x.player.id] = POINTS_SCALE[i % POINTS_SCALE.length];
+          ptsMap[x.player.id] = i < currentScale.length ? currentScale[i] : 0;
         });
 
         return (
