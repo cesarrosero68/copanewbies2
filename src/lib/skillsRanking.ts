@@ -48,9 +48,9 @@ export const extractSkillsPointScales = (tables: SkillsPointTableRow[] = []): Sk
 export const getPointsForPosition = (
   position: number | null | undefined,
   role: SkillsPlayer["role"],
-  pointScales: SkillsPointScales,
+  pointScales?: SkillsPointScales | null,
 ) => {
-  if (!position) return null;
+  if (!position || !pointScales) return null;
 
   const scale = role === "goalkeeper" ? pointScales.goalkeeper : pointScales.field;
   return scale[position - 1] ?? 0;
