@@ -165,12 +165,18 @@ export default function Skills() {
     const isTimed = [1, 2, 7].includes(testNum);
 
     if (isTimed) {
-      const POINTS_SCALE = [10, 8, 6, 5, 4, 3, 2, 1];
       const grouped = players.map(p => {
         const pr = tr.filter(r => r.player_id === p.id);
         const bt = bestTimeMs(p.id, testNum);
         return { player: p, results: pr, best: bt };
       }).filter(x => x.results.length > 0).sort((a, b) => (a.best || Infinity) - (b.best || Infinity));
+
+      // Split by role for correct point assignment
+      const fieldGrouped = grouped.filter(g => g.player.role === 'field');
+      const gkGrouped = grouped.filter(g => g.player.role === 'goalkeeper');
+      const ptsMap: Record<string, number> = {};
+      fieldGrouped.forEach((g, i) => { ptsMap[g.player.id] = i < fieldPointsScale.length ? fieldPointsScale[i] : 0; });
+      gkGrouped.forEach((g, i) => { ptsMap[g.player.id] = i < gkPointsScale.length ? gkPointsScale[i] : 0; });
 
       return (
         <Table>
@@ -182,7 +188,7 @@ export default function Skills() {
                 <TableCell>#{g.player.consecutive_number} {g.player.full_name} <Badge variant="outline" className="ml-1">{g.player.role === 'goalkeeper' ? 'GK' : 'J'}</Badge></TableCell>
                 <TableCell>{g.player.club}</TableCell>
                 <TableCell className="font-bold">{formatMs(g.best)}</TableCell>
-                <TableCell className="font-bold text-primary">{POINTS_SCALE[i % POINTS_SCALE.length]}</TableCell>
+                <TableCell className="font-bold text-primary">{ptsMap[g.player.id] ?? 0}</TableCell>
               </TableRow>
             ))}
           </TableBody>
