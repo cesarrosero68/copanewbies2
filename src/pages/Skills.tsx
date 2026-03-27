@@ -12,14 +12,24 @@ import { LogIn } from "lucide-react";
 export default function Skills() {
   const [players, setPlayers] = useState<SkillsPlayer[]>([]);
   const [results, setResults] = useState<SkillsResult[]>([]);
+  const [fieldPointsScale, setFieldPointsScale] = useState<number[]>([10, 8, 6, 5, 4, 3, 2, 1]);
+  const [gkPointsScale, setGkPointsScale] = useState<number[]>([10, 8]);
 
   const fetchData = async () => {
-    const [pRes, rRes] = await Promise.all([
+    const [pRes, rRes, ptRes] = await Promise.all([
       supabase.from('skills_players' as any).select('*').eq('is_active', true).order('consecutive_number'),
       supabase.from('skills_results' as any).select('*'),
+      supabase.from('skills_point_tables' as any).select('*'),
     ]);
     if (pRes.data) setPlayers(pRes.data as any);
     if (rRes.data) setResults(rRes.data as any);
+    if (ptRes.data) {
+      const tables = ptRes.data as any[];
+      const ft = tables.find(t => t.table_name === 'field_ranking_group');
+      const gt = tables.find(t => t.table_name === 'goalkeeper_ranking');
+      if (ft?.config && Array.isArray(ft.config)) setFieldPointsScale(ft.config);
+      if (gt?.config && Array.isArray(gt.config)) setGkPointsScale(gt.config.map((e: any) => e.points));
+    }
   };
 
   useEffect(() => {
@@ -39,26 +49,24 @@ export default function Skills() {
 
   // Timed test ranking points (cycling groups of 8: 10-8-6-5-4-3-2-1)
   const timedRankingPoints = (testNum: number, roleFilter: 'field' | 'goalkeeper') => {
-    const scale = [10, 8, 6, 5, 4, 3, 2, 1];
+    const scale = roleFilter === 'field' ? fieldPointsScale : gkPointsScale;
     const eligible = players.filter(p => p.role === roleFilter);
     const withTimes = eligible.map(p => ({ player: p, time: bestTimeMs(p.id, testNum) })).filter(x => x.time !== null) as { player: SkillsPlayer; time: number }[];
     withTimes.sort((a, b) => a.time - b.time);
     const pointsMap: Record<string, number> = {};
     withTimes.forEach((x, i) => {
-      const groupPos = i % scale.length;
-      pointsMap[x.player.id] = scale[groupPos];
+      pointsMap[x.player.id] = i < scale.length ? scale[i] : 0;
     });
     return pointsMap;
   };
 
   // GK ranking (1st=10, 2nd=8)
   const gkTimedPoints = (testNum: number) => {
-    const gkScale = [10, 8, 6, 5, 4, 3, 2, 1];
     const gks = players.filter(p => p.role === 'goalkeeper');
     const withTimes = gks.map(p => ({ player: p, time: bestTimeMs(p.id, testNum) })).filter(x => x.time !== null) as { player: SkillsPlayer; time: number }[];
     withTimes.sort((a, b) => a.time - b.time);
     const pm: Record<string, number> = {};
-    withTimes.forEach((x, i) => { pm[x.player.id] = gkScale[i] || 0; });
+    withTimes.forEach((x, i) => { pm[x.player.id] = i < gkPointsScale.length ? gkPointsScale[i] : 0; });
     return pm;
   };
 
