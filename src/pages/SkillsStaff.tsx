@@ -127,6 +127,7 @@ export default function SkillsStaff() {
               pointScales={pointScales}
               roleFilter="goalkeeper"
               options={gkShootoutOptions}
+              maxShootouts={12}
             />
           </TabsContent>
 
