@@ -49,7 +49,7 @@ export default function TimedTestTab({
       .filter((result) => result.player_id === playerId)
       .sort((a, b) => (a.attempt_number || 0) - (b.attempt_number || 0));
 
-  const distinctAttempts = (playerId: string) => new Set(playerResults(playerId).map((result) => result.attempt_number));
+  const distinctAttempts = (playerId: string) => new Set(playerResults(playerId).map((result) => result.attempt_number).filter((n): n is number => n != null));
 
   const bestTime = (playerId: string) => getBestTimedResultMs(playerResults(playerId));
 
