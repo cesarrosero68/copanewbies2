@@ -77,11 +77,28 @@ export default function TimedTestTab({
   const handleSave = async () => {
     if (!selectedPlayer) return;
 
-    const attempt = nextAttempt(selectedPlayer);
-    if (!attempt) {
+    // Re-fetch latest results to avoid stale state
+    const { data: latestResults } = await supabase
+      .from("skills_results" as any)
+      .select("attempt_number")
+      .eq("player_id", selectedPlayer)
+      .eq("test_number", testNumber);
+
+    const existingAttempts = (latestResults || [])
+      .map((r: any) => r.attempt_number)
+      .filter((n: any): n is number => n != null);
+    
+    if (existingAttempts.length >= maxAttempts) {
       toast({ title: "Ya completó todos los intentos" });
       return;
     }
+
+    const usedSet = new Set(existingAttempts);
+    let attempt: number | null = null;
+    for (let i = 1; i <= maxAttempts; i++) {
+      if (!usedSet.has(i)) { attempt = i; break; }
+    }
+    if (!attempt) attempt = existingAttempts.length + 1;
 
     const staff = getStaffSession();
     const row: Record<string, string | number | null> = {
@@ -106,7 +123,7 @@ export default function TimedTestTab({
     setSeconds("");
     setMilliseconds("");
     setMinutes("");
-    onRefresh();
+    await onRefresh();
   };
 
   const handleDelete = async (id: string) => {
