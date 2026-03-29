@@ -49,11 +49,20 @@ export default function TimedTestTab({
       .filter((result) => result.player_id === playerId)
       .sort((a, b) => (a.attempt_number || 0) - (b.attempt_number || 0));
 
-  const distinctAttempts = (playerId: string) => new Set(playerResults(playerId).map((result) => result.attempt_number).filter((n): n is number => n != null));
+  const distinctAttempts = (playerId: string) => {
+    const nums = playerResults(playerId)
+      .map((r) => r.attempt_number)
+      .filter((n): n is number => n != null);
+    return new Set(nums);
+  };
 
   const bestTime = (playerId: string) => getBestTimedResultMs(playerResults(playerId));
 
   const nextAttempt = (playerId: string) => {
+    const existing = playerResults(playerId);
+    // Use total count of records as a fallback safeguard
+    if (existing.length >= maxAttempts) return null;
+
     const attempts = distinctAttempts(playerId);
     if (attempts.size >= maxAttempts) return null;
 
@@ -61,17 +70,35 @@ export default function TimedTestTab({
       if (!attempts.has(index)) return index;
     }
 
-    return null;
+    // Fallback: assign next sequential number
+    return attempts.size + 1;
   };
 
   const handleSave = async () => {
     if (!selectedPlayer) return;
 
-    const attempt = nextAttempt(selectedPlayer);
-    if (!attempt) {
+    // Re-fetch latest results to avoid stale state
+    const { data: latestResults } = await supabase
+      .from("skills_results" as any)
+      .select("attempt_number")
+      .eq("player_id", selectedPlayer)
+      .eq("test_number", testNumber);
+
+    const existingAttempts = (latestResults || [])
+      .map((r: any) => r.attempt_number)
+      .filter((n: any): n is number => n != null);
+    
+    if (existingAttempts.length >= maxAttempts) {
       toast({ title: "Ya completó todos los intentos" });
       return;
     }
+
+    const usedSet = new Set(existingAttempts);
+    let attempt: number | null = null;
+    for (let i = 1; i <= maxAttempts; i++) {
+      if (!usedSet.has(i)) { attempt = i; break; }
+    }
+    if (!attempt) attempt = existingAttempts.length + 1;
 
     const staff = getStaffSession();
     const row: Record<string, string | number | null> = {
@@ -96,7 +123,7 @@ export default function TimedTestTab({
     setSeconds("");
     setMilliseconds("");
     setMinutes("");
-    onRefresh();
+    await onRefresh();
   };
 
   const handleDelete = async (id: string) => {
