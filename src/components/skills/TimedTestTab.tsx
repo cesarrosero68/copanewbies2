@@ -49,11 +49,20 @@ export default function TimedTestTab({
       .filter((result) => result.player_id === playerId)
       .sort((a, b) => (a.attempt_number || 0) - (b.attempt_number || 0));
 
-  const distinctAttempts = (playerId: string) => new Set(playerResults(playerId).map((result) => result.attempt_number).filter((n): n is number => n != null));
+  const distinctAttempts = (playerId: string) => {
+    const nums = playerResults(playerId)
+      .map((r) => r.attempt_number)
+      .filter((n): n is number => n != null);
+    return new Set(nums);
+  };
 
   const bestTime = (playerId: string) => getBestTimedResultMs(playerResults(playerId));
 
   const nextAttempt = (playerId: string) => {
+    const existing = playerResults(playerId);
+    // Use total count of records as a fallback safeguard
+    if (existing.length >= maxAttempts) return null;
+
     const attempts = distinctAttempts(playerId);
     if (attempts.size >= maxAttempts) return null;
 
@@ -61,7 +70,8 @@ export default function TimedTestTab({
       if (!attempts.has(index)) return index;
     }
 
-    return null;
+    // Fallback: assign next sequential number
+    return attempts.size + 1;
   };
 
   const handleSave = async () => {
