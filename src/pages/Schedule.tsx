@@ -114,6 +114,9 @@ export default function Schedule() {
                     <Badge variant={statusColors[match.status] as any} className="text-xs shrink-0">
                       {statusLabels[match.status]}
                     </Badge>
+                    {match.notes?.toUpperCase().includes("APLAZADO") && (
+                      <Badge className="text-xs shrink-0 bg-amber-500 text-white border-amber-500 hover:bg-amber-600">Aplazado</Badge>
+                    )}
 
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <TeamLogo team={match.home_team} size={40} />
