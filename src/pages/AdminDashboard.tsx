@@ -132,6 +132,9 @@ export default function AdminDashboard() {
                     <Badge variant={statusColors[match.status] as any} className="text-xs">
                       {statusLabels[match.status]}
                     </Badge>
+                    {match.notes?.toUpperCase().includes("APLAZADO") && (
+                      <Badge className="text-xs bg-amber-500 text-white border-amber-500 hover:bg-amber-600">Aplazado</Badge>
+                    )}
                     <span className="text-xs text-muted-foreground">#{match.match_number}</span>
                     <span className="font-medium text-sm">
                       {match.home_team?.name} vs {match.away_team?.name}
