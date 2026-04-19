@@ -260,9 +260,55 @@ export default function Schedule() {
         <TabsContent value="playoffs">
           <div className="space-y-3">
             {playoffMatches && playoffMatches.length > 0 ? (
-              playoffMatches.map((match: any) => (
-                <MatchCard key={match.id} match={match} showStage />
-              ))
+              (() => {
+                const byStage: Record<string, any> = {};
+                playoffMatches.forEach((m: any) => { byStage[m.stage] = m; });
+                const hasWinner = (m: any) => !!m?.winner_team_id;
+                const p1aDone = hasWinner(byStage.P1A);
+                const p1bDone = hasWinner(byStage.P1B);
+                const semiDone = hasWinner(byStage.SEMI);
+                const p2Done = hasWinner(byStage.P2);
+
+                const placeholdersFor = (stage: string): { home?: string; away?: string } => {
+                  switch (stage) {
+                    case "SEMI":
+                      return {
+                        home: p1aDone ? undefined : "Ganador P1A",
+                        away: p1bDone ? undefined : "Ganador P1B",
+                      };
+                    case "P2":
+                      return {
+                        home: p1aDone ? undefined : "Perdedor P1A",
+                        away: p1bDone ? undefined : "Perdedor P1B",
+                      };
+                    case "THIRD":
+                      return {
+                        home: semiDone ? undefined : "Perdedor Semi",
+                        away: p2Done ? undefined : "Ganador P2",
+                      };
+                    case "FINAL":
+                      return {
+                        home: undefined,
+                        away: semiDone ? undefined : "Ganador Semi",
+                      };
+                    default:
+                      return {};
+                  }
+                };
+
+                return playoffMatches.map((match: any) => {
+                  const ph = placeholdersFor(match.stage);
+                  return (
+                    <MatchCard
+                      key={match.id}
+                      match={match}
+                      showStage
+                      homePlaceholder={ph.home}
+                      awayPlaceholder={ph.away}
+                    />
+                  );
+                });
+              })()
             ) : (
               <p className="text-muted-foreground text-center py-8">
                 No hay partidos de playoffs programados aún.
