@@ -23,12 +23,12 @@ function BracketMatch({
   awayTeamOverride?: any;
 }) {
   const isPlayed = match?.status === "final" || match?.status === "locked";
-  // Show placeholders only in preseason, when no match exists, or when the match
-  // hasn't been played yet AND we don't have a resolved team override from standings.
-  const homeTeam = isPlayed ? match?.home_team : (homeTeamOverride ?? match?.home_team);
-  const awayTeam = isPlayed ? match?.away_team : (awayTeamOverride ?? match?.away_team);
-  const showHomePlaceholder = IS_PRESEASON || !match || (!isPlayed && !homeTeamOverride);
-  const showAwayPlaceholder = IS_PRESEASON || !match || (!isPlayed && !awayTeamOverride);
+  // Prefer the actual teams assigned to the match in the DB. Fall back to the
+  // standings-derived override, then to placeholders.
+  const homeTeam = match?.home_team ?? homeTeamOverride;
+  const awayTeam = match?.away_team ?? awayTeamOverride;
+  const showHomePlaceholder = IS_PRESEASON || !homeTeam;
+  const showAwayPlaceholder = IS_PRESEASON || !awayTeam;
 
   const content = (
     <Card className="w-64 hover:shadow-md transition-shadow">
