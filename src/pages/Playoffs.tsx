@@ -195,10 +195,10 @@ export default function Playoffs() {
             <BracketMatch
               match={finalM}
               label="Final"
-              homePlaceholder="Ganador Semi"
-              awayPlaceholder="Puesto 1"
-              homeTeamResolved={semiWinner}
-              awayTeamResolved={finalReapers}
+              homePlaceholder="Puesto 1"
+              awayPlaceholder="Ganador Semi"
+              homeTeamResolved={finalReapers}
+              awayTeamResolved={semiWinner}
             />
             <BracketMatch
               match={third}
