@@ -8,6 +8,7 @@ import { es } from "date-fns/locale";
 import { toBogotaDate } from "@/lib/dateUtils";
 import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import TeamLogo from "@/components/TeamLogo";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -25,6 +26,15 @@ const statusColors: Record<string, string> = {
   live: "destructive",
   final: "default",
   locked: "outline",
+};
+
+const stageLabels: Record<string, string> = {
+  P1A: "Playoff 1A",
+  P1B: "Playoff 1B",
+  SEMI: "Semifinal",
+  P2: "Playoff 2",
+  THIRD: "3ro / 4to",
+  FINAL: "Final",
 };
 
 export default function Schedule() {
