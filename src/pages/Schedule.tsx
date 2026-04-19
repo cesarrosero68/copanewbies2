@@ -37,10 +37,24 @@ const stageLabels: Record<string, string> = {
   FINAL: "Final",
 };
 
-function MatchCard({ match, showStage = false }: { match: any; showStage?: boolean }) {
+function MatchCard({
+  match,
+  showStage = false,
+  homePlaceholder,
+  awayPlaceholder,
+}: {
+  match: any;
+  showStage?: boolean;
+  homePlaceholder?: string;
+  awayPlaceholder?: string;
+}) {
   const isPlayed = match.status === "final" || match.status === "locked";
   const isLive = match.status === "live";
   const isClickable = isPlayed || isLive;
+  const showHomePlaceholder = !!homePlaceholder;
+  const showAwayPlaceholder = !!awayPlaceholder;
+  const homeName = showHomePlaceholder ? homePlaceholder : match.home_team?.name;
+  const awayName = showAwayPlaceholder ? awayPlaceholder : match.away_team?.name;
   return (
     <Link to={isClickable ? `/match/${match.id}` : "#"}>
       <Card className={`hover:shadow-md transition-shadow ${isClickable ? "cursor-pointer" : ""} ${isLive ? "border-destructive" : ""}`}>
@@ -65,8 +79,8 @@ function MatchCard({ match, showStage = false }: { match: any; showStage?: boole
             )}
 
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <TeamLogo team={match.home_team} size={40} />
-              <span className="font-medium text-sm truncate">{match.home_team?.name}</span>
+              {!showHomePlaceholder && <TeamLogo team={match.home_team} size={40} />}
+              <span className={`font-medium text-sm truncate ${showHomePlaceholder ? "text-muted-foreground italic" : ""}`}>{homeName}</span>
             </div>
 
             {(isPlayed || isLive) ? (
@@ -78,8 +92,8 @@ function MatchCard({ match, showStage = false }: { match: any; showStage?: boole
             )}
 
             <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-              <span className="font-medium text-sm truncate">{match.away_team?.name}</span>
-              <TeamLogo team={match.away_team} size={40} />
+              <span className={`font-medium text-sm truncate ${showAwayPlaceholder ? "text-muted-foreground italic" : ""}`}>{awayName}</span>
+              {!showAwayPlaceholder && <TeamLogo team={match.away_team} size={40} />}
             </div>
 
             <div className="text-xs text-muted-foreground shrink-0 w-28 text-right">
@@ -106,8 +120,8 @@ function MatchCard({ match, showStage = false }: { match: any; showStage?: boole
             </div>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <TeamLogo team={match.home_team} size={36} />
-                <span className="font-medium text-sm truncate">{match.home_team?.name}</span>
+                {!showHomePlaceholder && <TeamLogo team={match.home_team} size={36} />}
+                <span className={`font-medium text-sm truncate ${showHomePlaceholder ? "text-muted-foreground italic" : ""}`}>{homeName}</span>
               </div>
               {(isPlayed || isLive) ? (
                 <span className="font-display text-lg font-bold shrink-0">
@@ -117,8 +131,8 @@ function MatchCard({ match, showStage = false }: { match: any; showStage?: boole
             </div>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <TeamLogo team={match.away_team} size={36} />
-                <span className="font-medium text-sm truncate">{match.away_team?.name}</span>
+                {!showAwayPlaceholder && <TeamLogo team={match.away_team} size={36} />}
+                <span className={`font-medium text-sm truncate ${showAwayPlaceholder ? "text-muted-foreground italic" : ""}`}>{awayName}</span>
               </div>
               {(isPlayed || isLive) ? (
                 <span className="font-display text-lg font-bold shrink-0">
@@ -246,9 +260,55 @@ export default function Schedule() {
         <TabsContent value="playoffs">
           <div className="space-y-3">
             {playoffMatches && playoffMatches.length > 0 ? (
-              playoffMatches.map((match: any) => (
-                <MatchCard key={match.id} match={match} showStage />
-              ))
+              (() => {
+                const byStage: Record<string, any> = {};
+                playoffMatches.forEach((m: any) => { byStage[m.stage] = m; });
+                const hasWinner = (m: any) => !!m?.winner_team_id;
+                const p1aDone = hasWinner(byStage.P1A);
+                const p1bDone = hasWinner(byStage.P1B);
+                const semiDone = hasWinner(byStage.SEMI);
+                const p2Done = hasWinner(byStage.P2);
+
+                const placeholdersFor = (stage: string): { home?: string; away?: string } => {
+                  switch (stage) {
+                    case "SEMI":
+                      return {
+                        home: p1aDone ? undefined : "Ganador P1A",
+                        away: p1bDone ? undefined : "Ganador P1B",
+                      };
+                    case "P2":
+                      return {
+                        home: p1aDone ? undefined : "Perdedor P1A",
+                        away: p1bDone ? undefined : "Perdedor P1B",
+                      };
+                    case "THIRD":
+                      return {
+                        home: semiDone ? undefined : "Perdedor Semi",
+                        away: p2Done ? undefined : "Ganador P2",
+                      };
+                    case "FINAL":
+                      return {
+                        home: undefined,
+                        away: semiDone ? undefined : "Ganador Semi",
+                      };
+                    default:
+                      return {};
+                  }
+                };
+
+                return playoffMatches.map((match: any) => {
+                  const ph = placeholdersFor(match.stage);
+                  return (
+                    <MatchCard
+                      key={match.id}
+                      match={match}
+                      showStage
+                      homePlaceholder={ph.home}
+                      awayPlaceholder={ph.away}
+                    />
+                  );
+                });
+              })()
             ) : (
               <p className="text-muted-foreground text-center py-8">
                 No hay partidos de playoffs programados aún.
