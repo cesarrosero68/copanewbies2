@@ -7,9 +7,28 @@ import TeamLogo from "@/components/TeamLogo";
 
 const TOURNAMENT_ID = "a0000000-0000-0000-0000-000000000001";
 
-function BracketMatch({ match, label, homePlaceholder, awayPlaceholder }: { match: any; label: string; homePlaceholder: string; awayPlaceholder: string }) {
+function BracketMatch({
+  match,
+  label,
+  homePlaceholder,
+  awayPlaceholder,
+  homeTeamOverride,
+  awayTeamOverride,
+}: {
+  match: any;
+  label: string;
+  homePlaceholder: string;
+  awayPlaceholder: string;
+  homeTeamOverride?: any;
+  awayTeamOverride?: any;
+}) {
   const isPlayed = match?.status === "final" || match?.status === "locked";
-  const showPlaceholders = IS_PRESEASON || !match;
+  // Show placeholders only in preseason, when no match exists, or when the match
+  // hasn't been played yet AND we don't have a resolved team override from standings.
+  const homeTeam = isPlayed ? match?.home_team : (homeTeamOverride ?? match?.home_team);
+  const awayTeam = isPlayed ? match?.away_team : (awayTeamOverride ?? match?.away_team);
+  const showHomePlaceholder = IS_PRESEASON || !match || (!isPlayed && !homeTeamOverride);
+  const showAwayPlaceholder = IS_PRESEASON || !match || (!isPlayed && !awayTeamOverride);
 
   const content = (
     <Card className="w-64 hover:shadow-md transition-shadow">
@@ -17,23 +36,23 @@ function BracketMatch({ match, label, homePlaceholder, awayPlaceholder }: { matc
         <p className="text-xs text-muted-foreground font-display uppercase mb-2">{label}</p>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            {!showPlaceholders && match?.home_team && <TeamLogo team={match.home_team} size={20} />}
+            {!showHomePlaceholder && homeTeam && <TeamLogo team={homeTeam} size={20} />}
             <span className="text-sm font-medium">
-              {showPlaceholders ? homePlaceholder : (match?.home_team?.name || "TBD")}
+              {showHomePlaceholder ? homePlaceholder : (homeTeam?.name || "TBD")}
             </span>
           </div>
-          {isPlayed && !showPlaceholders && <span className="font-display font-bold">{match.reg_home_score}</span>}
+          {isPlayed && <span className="font-display font-bold">{match.reg_home_score}</span>}
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {!showPlaceholders && match?.away_team && <TeamLogo team={match.away_team} size={20} />}
+            {!showAwayPlaceholder && awayTeam && <TeamLogo team={awayTeam} size={20} />}
             <span className="text-sm font-medium">
-              {showPlaceholders ? awayPlaceholder : (match?.away_team?.name || "TBD")}
+              {showAwayPlaceholder ? awayPlaceholder : (awayTeam?.name || "TBD")}
             </span>
           </div>
-          {isPlayed && !showPlaceholders && <span className="font-display font-bold">{match.reg_away_score}</span>}
+          {isPlayed && <span className="font-display font-bold">{match.reg_away_score}</span>}
         </div>
-        {match?.ot_played && isPlayed && !showPlaceholders && (
+        {match?.ot_played && isPlayed && (
           <p className="text-xs text-muted-foreground mt-1">
             {match.so_played ? "Penales (SO)" : "Overtime (OT)"}
           </p>
@@ -42,7 +61,7 @@ function BracketMatch({ match, label, homePlaceholder, awayPlaceholder }: { matc
     </Card>
   );
 
-  if (match && !showPlaceholders) {
+  if (match && isPlayed) {
     return <Link to={`/match/${match.id}`}>{content}</Link>;
   }
   return content;
@@ -75,13 +94,37 @@ export default function Playoffs() {
     },
   });
 
+  // Read the actual standings to populate the bracket dynamically
+  const { data: standings } = useQuery({
+    queryKey: ["playoff-standings"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("standings_aggregate")
+        .select("rank, team:teams(*)")
+        .eq("tournament_id", TOURNAMENT_ID)
+        .order("rank", { ascending: true });
+      return data || [];
+    },
+  });
+
   const allRegularDone = regularMatches && regularMatches.length > 0 &&
     regularMatches.every((m: any) => m.status === "final" || m.status === "locked");
 
   const getMatch = (stage: string) => {
-    if (!allRegularDone) return undefined;
     return playoffMatches?.find((m: any) => m.stage === stage);
   };
+
+  // Resolve team by rank from standings (only when regular season is done)
+  const teamByRank = (rank: number) => {
+    if (!allRegularDone) return undefined;
+    return standings?.find((s: any) => s.rank === rank)?.team;
+  };
+
+  const team1 = teamByRank(1);
+  const team2 = teamByRank(2);
+  const team3 = teamByRank(3);
+  const team4 = teamByRank(4);
+  const team5 = teamByRank(5);
 
   return (
     <div className="container py-8">
@@ -94,8 +137,22 @@ export default function Playoffs() {
         <div className="flex gap-8 items-center min-w-[900px] py-4">
           {/* Round 1 */}
           <div className="flex flex-col gap-8">
-            <BracketMatch match={getMatch("P1A")} label="Playoff 1A" homePlaceholder="Puesto 2" awayPlaceholder="Puesto 5" />
-            <BracketMatch match={getMatch("P1B")} label="Playoff 1B" homePlaceholder="Puesto 3" awayPlaceholder="Puesto 4" />
+            <BracketMatch
+              match={getMatch("P1A")}
+              label="Playoff 1A"
+              homePlaceholder="Puesto 2"
+              awayPlaceholder="Puesto 3"
+              homeTeamOverride={team2}
+              awayTeamOverride={team3}
+            />
+            <BracketMatch
+              match={getMatch("P1B")}
+              label="Playoff 1B"
+              homePlaceholder="Puesto 4"
+              awayPlaceholder="Puesto 5"
+              homeTeamOverride={team4}
+              awayTeamOverride={team5}
+            />
           </div>
 
           {/* Connectors */}
@@ -118,7 +175,13 @@ export default function Playoffs() {
 
           {/* Final + 3rd */}
           <div className="flex flex-col gap-8">
-            <BracketMatch match={getMatch("FINAL")} label="Final" homePlaceholder="Ganador Semi" awayPlaceholder="Puesto 1" />
+            <BracketMatch
+              match={getMatch("FINAL")}
+              label="Final"
+              homePlaceholder="Ganador Semi"
+              awayPlaceholder="Puesto 1"
+              awayTeamOverride={team1}
+            />
             <BracketMatch match={getMatch("THIRD")} label="3ro / 4to" homePlaceholder="Perdedor Semi" awayPlaceholder="Perdedor P2" />
           </div>
         </div>
