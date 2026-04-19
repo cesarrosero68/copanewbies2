@@ -12,21 +12,21 @@ function BracketMatch({
   label,
   homePlaceholder,
   awayPlaceholder,
-  homeTeamOverride,
-  awayTeamOverride,
+  homeTeamResolved,
+  awayTeamResolved,
 }: {
   match: any;
   label: string;
   homePlaceholder: string;
   awayPlaceholder: string;
-  homeTeamOverride?: any;
-  awayTeamOverride?: any;
+  // Explicitly resolved teams to display (overrides match.home_team / match.away_team).
+  // If undefined, show the placeholder text instead.
+  homeTeamResolved?: any;
+  awayTeamResolved?: any;
 }) {
   const isPlayed = match?.status === "final" || match?.status === "locked";
-  // Prefer the actual teams assigned to the match in the DB. Fall back to the
-  // standings-derived override, then to placeholders.
-  const homeTeam = match?.home_team ?? homeTeamOverride;
-  const awayTeam = match?.away_team ?? awayTeamOverride;
+  const homeTeam = homeTeamResolved;
+  const awayTeam = awayTeamResolved;
   const showHomePlaceholder = IS_PRESEASON || !homeTeam;
   const showAwayPlaceholder = IS_PRESEASON || !awayTeam;
 
@@ -81,50 +81,53 @@ export default function Playoffs() {
     },
   });
 
-  // Check if all regular season matches are finished
-  const { data: regularMatches } = useQuery({
-    queryKey: ["regular-matches-status"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("matches")
-        .select("id, status")
-        .eq("tournament_id", TOURNAMENT_ID)
-        .eq("stage", "REGULAR");
-      return data || [];
-    },
-  });
-
-  // Read the actual standings to populate the bracket dynamically
-  const { data: standings } = useQuery({
-    queryKey: ["playoff-standings"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("standings_aggregate")
-        .select("rank, team:teams(*)")
-        .eq("tournament_id", TOURNAMENT_ID)
-        .order("rank", { ascending: true });
-      return data || [];
-    },
-  });
-
-  const allRegularDone = regularMatches && regularMatches.length > 0 &&
-    regularMatches.every((m: any) => m.status === "final" || m.status === "locked");
-
   const getMatch = (stage: string) => {
     return playoffMatches?.find((m: any) => m.stage === stage);
   };
 
-  // Resolve team by rank from standings (only when regular season is done)
-  const teamByRank = (rank: number) => {
-    if (!allRegularDone) return undefined;
-    return standings?.find((s: any) => s.rank === rank)?.team;
+  const p1a = getMatch("P1A");
+  const p1b = getMatch("P1B");
+  const semi = getMatch("SEMI");
+  const p2 = getMatch("P2");
+  const finalM = getMatch("FINAL");
+  const third = getMatch("THIRD");
+
+  // Helper: resolve winner / loser teams from a finished match.
+  const winnerOf = (m: any) => {
+    if (!m?.winner_team_id) return undefined;
+    if (m.home_team?.id === m.winner_team_id) return m.home_team;
+    if (m.away_team?.id === m.winner_team_id) return m.away_team;
+    return undefined;
+  };
+  const loserOf = (m: any) => {
+    if (!m?.winner_team_id) return undefined;
+    if (m.home_team?.id === m.winner_team_id) return m.away_team;
+    if (m.away_team?.id === m.winner_team_id) return m.home_team;
+    return undefined;
   };
 
-  const team1 = teamByRank(1);
-  const team2 = teamByRank(2);
-  const team3 = teamByRank(3);
-  const team4 = teamByRank(4);
-  const team5 = teamByRank(5);
+  // P1A / P1B: show the teams already assigned to the match in the DB.
+  const p1aHome = p1a?.home_team;
+  const p1aAway = p1a?.away_team;
+  const p1bHome = p1b?.home_team;
+  const p1bAway = p1b?.away_team;
+
+  // SEMI: Ganador P1A vs Ganador P1B (only when those winners exist).
+  const semiHome = winnerOf(p1a);
+  const semiAway = winnerOf(p1b);
+
+  // P2: Perdedor P1A vs Perdedor P1B.
+  const p2Home = loserOf(p1a);
+  const p2Away = loserOf(p1b);
+
+  // FINAL: Reapers (the team already assigned as away in the DB — rank #1) vs Ganador Semi.
+  // Per the request, Reapers should always show; the other slot is "Ganador Semi" until resolved.
+  const finalReapers = finalM?.away_team ?? finalM?.home_team;
+  const semiWinner = winnerOf(semi);
+
+  // THIRD: Perdedor Semi vs Ganador P2.
+  const thirdHome = loserOf(semi);
+  const thirdAway = winnerOf(p2);
 
   return (
     <div className="container py-8">
@@ -138,20 +141,20 @@ export default function Playoffs() {
           {/* Round 1 */}
           <div className="flex flex-col gap-8">
             <BracketMatch
-              match={getMatch("P1A")}
+              match={p1a}
               label="Playoff 1A"
               homePlaceholder="Puesto 2"
               awayPlaceholder="Puesto 3"
-              homeTeamOverride={team2}
-              awayTeamOverride={team3}
+              homeTeamResolved={p1aHome}
+              awayTeamResolved={p1aAway}
             />
             <BracketMatch
-              match={getMatch("P1B")}
+              match={p1b}
               label="Playoff 1B"
               homePlaceholder="Puesto 4"
               awayPlaceholder="Puesto 5"
-              homeTeamOverride={team4}
-              awayTeamOverride={team5}
+              homeTeamResolved={p1bHome}
+              awayTeamResolved={p1bAway}
             />
           </div>
 
@@ -163,8 +166,22 @@ export default function Playoffs() {
 
           {/* Semifinal + P2 */}
           <div className="flex flex-col gap-8">
-            <BracketMatch match={getMatch("SEMI")} label="Semifinal" homePlaceholder="Ganador 1A" awayPlaceholder="Ganador 1B" />
-            <BracketMatch match={getMatch("P2")} label="Playoff 2" homePlaceholder="Perdedor 1A" awayPlaceholder="Perdedor 1B" />
+            <BracketMatch
+              match={semi}
+              label="Semifinal"
+              homePlaceholder="Ganador P1A"
+              awayPlaceholder="Ganador P1B"
+              homeTeamResolved={semiHome}
+              awayTeamResolved={semiAway}
+            />
+            <BracketMatch
+              match={p2}
+              label="Playoff 2"
+              homePlaceholder="Perdedor P1A"
+              awayPlaceholder="Perdedor P1B"
+              homeTeamResolved={p2Home}
+              awayTeamResolved={p2Away}
+            />
           </div>
 
           {/* Connectors */}
@@ -176,13 +193,21 @@ export default function Playoffs() {
           {/* Final + 3rd */}
           <div className="flex flex-col gap-8">
             <BracketMatch
-              match={getMatch("FINAL")}
+              match={finalM}
               label="Final"
               homePlaceholder="Ganador Semi"
               awayPlaceholder="Puesto 1"
-              awayTeamOverride={team1}
+              homeTeamResolved={semiWinner}
+              awayTeamResolved={finalReapers}
             />
-            <BracketMatch match={getMatch("THIRD")} label="3ro / 4to" homePlaceholder="Perdedor Semi" awayPlaceholder="Perdedor P2" />
+            <BracketMatch
+              match={third}
+              label="3ro / 4to"
+              homePlaceholder="Perdedor Semi"
+              awayPlaceholder="Ganador P2"
+              homeTeamResolved={thirdHome}
+              awayTeamResolved={thirdAway}
+            />
           </div>
         </div>
       </div>
