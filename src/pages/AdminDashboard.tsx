@@ -9,6 +9,7 @@ import { ChevronLeft } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 
 const TOURNAMENT_ID = "a0000000-0000-0000-0000-000000000001";
+const MANAGEABLE_STAGES = ["REGULAR", "P1A", "P1B", "SEMI", "P2", "THIRD", "FINAL"] as const;
 
 export default function AdminDashboard() {
   const [session, setSession] = useState<Session | null>(null);
@@ -50,7 +51,7 @@ export default function AdminDashboard() {
         .from("matches")
         .select("*, home_team:teams!matches_home_team_id_fkey(*), away_team:teams!matches_away_team_id_fkey(*)")
         .eq("tournament_id", TOURNAMENT_ID)
-        .eq("stage", "REGULAR")
+        .in("stage", MANAGEABLE_STAGES)
         .order("match_number");
       return data || [];
     },
@@ -98,6 +99,15 @@ export default function AdminDashboard() {
     final: "default",
     locked: "outline",
   };
+  const stageLabels: Record<string, string> = {
+    REGULAR: "Regular",
+    P1A: "Playoff 1A",
+    P1B: "Playoff 1B",
+    SEMI: "Semifinal",
+    P2: "Playoff 2",
+    THIRD: "3ro / 4to",
+    FINAL: "Final",
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -136,6 +146,9 @@ export default function AdminDashboard() {
                       <Badge className="text-xs bg-amber-500 text-white border-amber-500 hover:bg-amber-600">Aplazado</Badge>
                     )}
                     <span className="text-xs text-muted-foreground">#{match.match_number}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {stageLabels[match.stage] || match.stage}
+                    </Badge>
                     <span className="font-medium text-sm">
                       {match.home_team?.name} vs {match.away_team?.name}
                     </span>
