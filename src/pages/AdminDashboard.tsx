@@ -9,7 +9,7 @@ import { ChevronLeft } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 
 const TOURNAMENT_ID = "a0000000-0000-0000-0000-000000000001";
-const MANAGEABLE_STAGES = ["REGULAR", "P1A", "P1B", "SEMI", "P2", "THIRD", "FINAL"];
+const MANAGEABLE_STAGES = ["REGULAR", "P1A", "P1B", "SEMI", "P2", "THIRD", "FINAL"] as const;
 
 export default function AdminDashboard() {
   const [session, setSession] = useState<Session | null>(null);
