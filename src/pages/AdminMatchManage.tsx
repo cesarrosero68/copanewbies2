@@ -156,14 +156,171 @@ function ScoreBoard({ match, updateMatch, isLive, isPlayed, isPlayoff }: any) {
   }, [match]);
 
   const saveScore = () => {
+    const parsedHomeScore = parseInt(homeScore);
+    const parsedAwayScore = parseInt(awayScore);
     const updates: any = {
-      reg_home_score: parseInt(homeScore),
-      reg_away_score: parseInt(awayScore),
+      reg_home_score: parsedHomeScore,
+      reg_away_score: parsedAwayScore,
     };
     if (isPlayoff) {
       updates.ot_played = otPlayed;
       updates.so_played = soPlayed;
-      if (winnerId) {
+      const resolvedWinnerId = parsedHomeScore > parsedAwayScore
+        ? match.home_team_id
+        : parsedAwayScore > parsedHomeScore
+          ? match.away_team_id
+          : winnerId;
+
+      if (resolvedWinnerId) {
+        updates.winner_team_id = resolvedWinnerId;
+        updates.ot_winner_team_id = otPlayed && !soPlayed ? resolvedWinnerId : null;
+        updates.so_winner_team_id = soPlayed ? resolvedWinnerId : null;
+      } else {
+        updates.winner_team_id = null;
+        updates.ot_winner_team_id = null;
+        updates.so_winner_team_id = null;
+      }
+    }
+    updateMatch.mutate(updates);
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-center gap-6">
+          <div className="text-center flex-1">
+            <TeamLogo team={match.home_team} size={48} className="mx-auto mb-2" />
+            <h2 className="font-display text-lg font-bold">{match.home_team?.name}</h2>
+            {isLive && (
+              <Input
+                type="number" min={0} value={homeScore}
+                onChange={(e) => setHomeScore(e.target.value)}
+                className="w-20 mx-auto mt-2 text-center font-display text-2xl font-bold h-12"
+              />
+            )}
+          </div>
+
+          <div className="text-center">
+            {isPlayed ? (
+              <div className="font-display text-4xl font-bold">
+                {match.reg_home_score} - {match.reg_away_score}
+              </div>
+            ) : isLive ? (
+              <div className="font-display text-3xl text-muted-foreground">VS</div>
+            ) : (
+              <div className="font-display text-3xl text-muted-foreground">VS</div>
+            )}
+          </div>
+
+          <div className="text-center flex-1">
+            <TeamLogo team={match.away_team} size={48} className="mx-auto mb-2" />
+            <h2 className="font-display text-lg font-bold">{match.away_team?.name}</h2>
+            {isLive && (
+              <Input
+                type="number" min={0} value={awayScore}
+                onChange={(e) => setAwayScore(e.target.value)}
+                className="w-20 mx-auto mt-2 text-center font-display text-2xl font-bold h-12"
+              />
+            )}
+          </div>
+        </div>
+
+        {isLive && isPlayoff && (
+          <div className="mt-4 space-y-2 border-t pt-4">
+            <div className="flex items-center gap-4 justify-center">
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={otPlayed} onChange={(e) => setOtPlayed(e.target.checked)} />
+                OT jugado
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={soPlayed} onChange={(e) => setSoPlayed(e.target.checked)} />
+                Penales (SO)
+              </label>
+            </div>
+            {(otPlayed || soPlayed || homeScore === awayScore) && (
+              <div className="max-w-xs mx-auto">
+                <Label>Ganador</Label>
+                <Select value={winnerId} onValueChange={setWinnerId}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar ganador" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={match.home_team_id}>{match.home_team?.name}</SelectItem>
+                    <SelectItem value={match.away_team_id}>{match.away_team?.name}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        )}
+
+        {isLive && (
+          <div className="flex justify-center mt-4">
+            <Button onClick={saveScore} size="sm">Guardar Marcador</Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function MatchActions({ match, updateMatch, queryClient, navigate }: any) {
+  const isPlayoff = match.stage !== "REGULAR";
+
+  const startMatch = () => {
+    updateMatch.mutate({ status: "live" });
+  };
+
+  const closeMatch = async () => {
+    const { data: goals } = await supabase
+      .from("goal_events")
+      .select("team_id")
+      .eq("match_id", match.id);
+
+    const homeGoals = (goals || []).filter((g: any) => g.team_id === match.home_team_id).length;
+    const awayGoals = (goals || []).filter((g: any) => g.team_id === match.away_team_id).length;
+    const expectedHome = match.reg_home_score || 0;
+    const expectedAway = match.reg_away_score || 0;
+
+    if (homeGoals !== expectedHome || awayGoals !== expectedAway) {
+      toast({
+        title: "Error de validación",
+        description: `Los eventos de gol (${homeGoals}-${awayGoals}) no coinciden con el marcador (${expectedHome}-${expectedAway}). Registra todos los goles antes de cerrar.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const updates: any = { status: "final" };
+    if (isPlayoff) {
+      if (expectedHome > expectedAway) updates.winner_team_id = match.home_team_id;
+      else if (expectedAway > expectedHome) updates.winner_team_id = match.away_team_id;
+      else if (match.winner_team_id) updates.winner_team_id = match.winner_team_id;
+      else {
+        toast({
+          title: "Selecciona ganador",
+          description: "Los partidos de playoffs empatados necesitan ganador por OT o penales antes de cerrar.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      if (expectedHome > expectedAway) updates.winner_team_id = match.home_team_id;
+      else if (expectedAway > expectedHome) updates.winner_team_id = match.away_team_id;
+      else updates.winner_team_id = null;
+    }
+
+    const { error } = await supabase.from("matches").update(updates).eq("id", match.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    await supabase.rpc("recalculate_standings", { p_tournament_id: TOURNAMENT_ID });
+    await supabase.rpc("recalculate_player_stats", { p_tournament_id: TOURNAMENT_ID });
+
+    queryClient.invalidateQueries({ queryKey: ["admin-match", match.id] });
+    queryClient.invalidateQueries({ queryKey: ["admin-matches"] });
+    toast({ title: "Partido cerrado y estadísticas recalculadas" });
+  };
         updates.winner_team_id = winnerId;
         updates.ot_winner_team_id = otPlayed && !soPlayed ? winnerId : null;
         updates.so_winner_team_id = soPlayed ? winnerId : null;
