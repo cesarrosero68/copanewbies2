@@ -290,65 +290,6 @@ function MatchActions({ match, updateMatch, queryClient, navigate }: any) {
     }
 
     const updates: any = { status: "final" };
-    if (isPlayoff) {
-      if (expectedHome > expectedAway) updates.winner_team_id = match.home_team_id;
-      else if (expectedAway > expectedHome) updates.winner_team_id = match.away_team_id;
-      else if (match.winner_team_id) updates.winner_team_id = match.winner_team_id;
-      else {
-        toast({
-          title: "Selecciona ganador",
-          description: "Los partidos de playoffs empatados necesitan ganador por OT o penales antes de cerrar.",
-          variant: "destructive",
-        });
-        return;
-      }
-    } else {
-      if (expectedHome > expectedAway) updates.winner_team_id = match.home_team_id;
-      else if (expectedAway > expectedHome) updates.winner_team_id = match.away_team_id;
-      else updates.winner_team_id = null;
-    }
-
-    const { error } = await supabase.from("matches").update(updates).eq("id", match.id);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    await supabase.rpc("recalculate_standings", { p_tournament_id: TOURNAMENT_ID });
-    await supabase.rpc("recalculate_player_stats", { p_tournament_id: TOURNAMENT_ID });
-
-    queryClient.invalidateQueries({ queryKey: ["admin-match", match.id] });
-    queryClient.invalidateQueries({ queryKey: ["admin-matches"] });
-    toast({ title: "Partido cerrado y estadísticas recalculadas" });
-  };
-function MatchActions({ match, updateMatch, queryClient, navigate }: any) {
-  const isPlayoff = match.stage !== "REGULAR";
-
-  const startMatch = () => {
-    updateMatch.mutate({ status: "live" });
-  };
-
-  const closeMatch = async () => {
-    const { data: goals } = await supabase
-      .from("goal_events")
-      .select("team_id")
-      .eq("match_id", match.id);
-
-    const homeGoals = (goals || []).filter((g: any) => g.team_id === match.home_team_id).length;
-    const awayGoals = (goals || []).filter((g: any) => g.team_id === match.away_team_id).length;
-    const expectedHome = match.reg_home_score || 0;
-    const expectedAway = match.reg_away_score || 0;
-
-    if (homeGoals !== expectedHome || awayGoals !== expectedAway) {
-      toast({
-        title: "Error de validación",
-        description: `Los eventos de gol (${homeGoals}-${awayGoals}) no coinciden con el marcador (${expectedHome}-${expectedAway}). Registra todos los goles antes de cerrar.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const updates: any = { status: "final" };
     if (!isPlayoff) {
       if (expectedHome > expectedAway) updates.winner_team_id = match.home_team_id;
       else if (expectedAway > expectedHome) updates.winner_team_id = match.away_team_id;
