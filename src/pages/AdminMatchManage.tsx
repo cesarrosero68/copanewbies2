@@ -290,7 +290,19 @@ function MatchActions({ match, updateMatch, queryClient, navigate }: any) {
     }
 
     const updates: any = { status: "final" };
-    if (!isPlayoff) {
+    if (isPlayoff) {
+      if (expectedHome > expectedAway) updates.winner_team_id = match.home_team_id;
+      else if (expectedAway > expectedHome) updates.winner_team_id = match.away_team_id;
+      else if (match.winner_team_id) updates.winner_team_id = match.winner_team_id;
+      else {
+        toast({
+          title: "Selecciona ganador",
+          description: "Los partidos de playoffs empatados necesitan ganador por OT o penales antes de cerrar.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
       if (expectedHome > expectedAway) updates.winner_team_id = match.home_team_id;
       else if (expectedAway > expectedHome) updates.winner_team_id = match.away_team_id;
       else updates.winner_team_id = null;
@@ -374,7 +386,7 @@ function MatchActions({ match, updateMatch, queryClient, navigate }: any) {
             </Button>
           )}
           {match.status !== "final" && (
-            <Button size="sm" variant="outline" onClick={() => updateMatch.mutate({ status: "final" })}>
+            <Button size="sm" variant="outline" onClick={closeMatch}>
               Final
             </Button>
           )}
