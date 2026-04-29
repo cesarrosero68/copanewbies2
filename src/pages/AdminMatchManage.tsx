@@ -156,17 +156,29 @@ function ScoreBoard({ match, updateMatch, isLive, isPlayed, isPlayoff }: any) {
   }, [match]);
 
   const saveScore = () => {
+    const parsedHomeScore = parseInt(homeScore);
+    const parsedAwayScore = parseInt(awayScore);
     const updates: any = {
-      reg_home_score: parseInt(homeScore),
-      reg_away_score: parseInt(awayScore),
+      reg_home_score: parsedHomeScore,
+      reg_away_score: parsedAwayScore,
     };
     if (isPlayoff) {
       updates.ot_played = otPlayed;
       updates.so_played = soPlayed;
-      if (winnerId) {
-        updates.winner_team_id = winnerId;
-        updates.ot_winner_team_id = otPlayed && !soPlayed ? winnerId : null;
-        updates.so_winner_team_id = soPlayed ? winnerId : null;
+      const resolvedWinnerId = parsedHomeScore > parsedAwayScore
+        ? match.home_team_id
+        : parsedAwayScore > parsedHomeScore
+          ? match.away_team_id
+          : winnerId;
+
+      if (resolvedWinnerId) {
+        updates.winner_team_id = resolvedWinnerId;
+        updates.ot_winner_team_id = otPlayed && !soPlayed ? resolvedWinnerId : null;
+        updates.so_winner_team_id = soPlayed ? resolvedWinnerId : null;
+      } else {
+        updates.winner_team_id = null;
+        updates.ot_winner_team_id = null;
+        updates.so_winner_team_id = null;
       }
     }
     updateMatch.mutate(updates);
@@ -225,7 +237,7 @@ function ScoreBoard({ match, updateMatch, isLive, isPlayed, isPlayoff }: any) {
                 Penales (SO)
               </label>
             </div>
-            {(otPlayed || soPlayed) && (
+            {(otPlayed || soPlayed || homeScore === awayScore) && (
               <div className="max-w-xs mx-auto">
                 <Label>Ganador</Label>
                 <Select value={winnerId} onValueChange={setWinnerId}>
@@ -278,7 +290,19 @@ function MatchActions({ match, updateMatch, queryClient, navigate }: any) {
     }
 
     const updates: any = { status: "final" };
-    if (!isPlayoff) {
+    if (isPlayoff) {
+      if (expectedHome > expectedAway) updates.winner_team_id = match.home_team_id;
+      else if (expectedAway > expectedHome) updates.winner_team_id = match.away_team_id;
+      else if (match.winner_team_id) updates.winner_team_id = match.winner_team_id;
+      else {
+        toast({
+          title: "Selecciona ganador",
+          description: "Los partidos de playoffs empatados necesitan ganador por OT o penales antes de cerrar.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
       if (expectedHome > expectedAway) updates.winner_team_id = match.home_team_id;
       else if (expectedAway > expectedHome) updates.winner_team_id = match.away_team_id;
       else updates.winner_team_id = null;
@@ -362,7 +386,7 @@ function MatchActions({ match, updateMatch, queryClient, navigate }: any) {
             </Button>
           )}
           {match.status !== "final" && (
-            <Button size="sm" variant="outline" onClick={() => updateMatch.mutate({ status: "final" })}>
+            <Button size="sm" variant="outline" onClick={closeMatch}>
               Final
             </Button>
           )}
