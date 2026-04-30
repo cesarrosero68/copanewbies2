@@ -46,6 +46,34 @@ export default function Home() {
     }
   });
 
+  const { data: playoffProgress } = useQuery({
+    queryKey: ["playoff-progress"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("matches")
+        .select("stage, winner_team_id")
+        .eq("tournament_id", TOURNAMENT_ID)
+        .in("stage", ["P1A", "P1B", "SEMI", "P2"]);
+      const map: Record<string, boolean> = {};
+      (data || []).forEach((m: any) => {
+        map[m.stage] = !!m.winner_team_id;
+      });
+      return map;
+    }
+  });
+
+  const getPlayoffPlaceholders = (stage: string) => {
+    const p1aDone = playoffProgress?.["P1A"];
+    const p1bDone = playoffProgress?.["P1B"];
+    const semiDone = playoffProgress?.["SEMI"];
+    const p2Done = playoffProgress?.["P2"];
+    if (stage === "SEMI") return { home: p1aDone ? undefined : "Ganador P1A", away: p1bDone ? undefined : "Ganador P1B" };
+    if (stage === "P2") return { home: p1aDone ? undefined : "Perdedor P1A", away: p1bDone ? undefined : "Perdedor P1B" };
+    if (stage === "THIRD") return { home: semiDone ? undefined : "Perdedor Semi", away: p2Done ? undefined : "Ganador P2" };
+    if (stage === "FINAL") return { home: "Reapers", away: semiDone ? undefined : "Ganador Semi" };
+    return { home: undefined, away: undefined };
+  };
+
   const { data: recentMatches } = useQuery({
     queryKey: ["recent-matches"],
     queryFn: async () => {
@@ -164,18 +192,24 @@ export default function Home() {
       <section>
         <h2 className="font-display text-2xl font-bold uppercase mb-4">Próximos Partidos</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {upcomingMatches?.map((match: any) => (
+          {upcomingMatches?.map((match: any) => {
+            const ph = getPlayoffPlaceholders(match.stage);
+            const homeName = ph.home ?? match.home_team?.name;
+            const awayName = ph.away ?? match.away_team?.name;
+            const showHomeLogo = !ph.home;
+            const showAwayLogo = !ph.away;
+            return (
             <Card key={match.id}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-1">
-                    <TeamLogo team={match.home_team} size={40} />
-                    <span className="font-medium text-sm">{match.home_team?.name}</span>
+                    {showHomeLogo && <TeamLogo team={match.home_team} size={40} />}
+                    <span className="font-medium text-sm">{homeName}</span>
                   </div>
                   <span className="text-muted-foreground font-display text-lg px-4">VS</span>
                   <div className="flex items-center gap-2 flex-1 justify-end">
-                    <span className="font-medium text-sm">{match.away_team?.name}</span>
-                    <TeamLogo team={match.away_team} size={40} />
+                    <span className="font-medium text-sm">{awayName}</span>
+                    {showAwayLogo && <TeamLogo team={match.away_team} size={40} />}
                   </div>
                 </div>
                 {match.start_time && (
@@ -188,7 +222,8 @@ export default function Home() {
                 </Badge>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
           {(!upcomingMatches || upcomingMatches.length === 0) && (
             <p className="text-muted-foreground text-sm col-span-2">No hay partidos programados</p>
           )}
